@@ -14,6 +14,12 @@
             <div class="text-2xl font-bold text-indigo-900">🎓 Novo</div>
             {% if user %}
             <div class="flex items-center gap-4">
+                <a href="{{ url_for('my_profiles') }}" class="text-gray-700 hover:text-indigo-600 transition-colors font-medium">
+                    Mis Análisis
+                </a>
+                <a href="{{ url_for('profile') }}" class="text-gray-700 hover:text-indigo-600 transition-colors font-medium">
+                    Nuevo Análisis
+                </a>
                 <span class="text-gray-700">Hola, <strong>{{ user.name }}</strong></span>
                 <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
                     Cerrar Sesión
@@ -25,9 +31,12 @@
     
     <div class="container mx-auto px-4 py-12 max-w-7xl">
         <!-- Header -->
-        <div class="text-center mb-12">
+        <div class="text-center mb-8">
             <h1 class="text-5xl font-bold text-indigo-900 mb-4">Novo</h1>
-            <p class="text-xl text-indigo-700">Your Personalized Opportunities</p>
+            <p class="text-xl text-indigo-700">Tus Oportunidades Personalizadas</p>
+            {% if student_profile %}
+            <p class="text-lg text-gray-600 mt-2">Para: <strong>{{ student_profile.name }}</strong></p>
+            {% endif %}
         </div>
 
         {% if matches and matches|length > 0 %}
@@ -101,15 +110,23 @@
             <svg class="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">No Matches Yet</h2>
-            <p class="text-gray-600 mb-6">We haven't found any opportunities for you yet. Check back soon!</p>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">¡Encontramos Oportunidades!</h2>
+            <p class="text-gray-600 mb-6">Estamos buscando las mejores oportunidades para ti. Por favor espera un momento...</p>
+            {% if student_id %}
+            <a href="{{ url_for('run_hunter', student_id=student_id) }}" class="inline-block px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors">
+                🔍 Buscar Oportunidades Ahora
+            </a>
+            {% endif %}
         </div>
         {% endif %}
 
         <!-- Actions -->
-        <div class="flex justify-center gap-4">
+        <div class="flex justify-center gap-4 mt-8">
+            <a href="{{ url_for('my_profiles') }}" class="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">
+                📋 Ver Mis Análisis
+            </a>
             <a href="{{ url_for('profile') }}" class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-                Update Profile
+                ➕ Nuevo Análisis
             </a>
         </div>
     </div>

@@ -14,6 +14,12 @@
             <div class="text-2xl font-bold text-indigo-900">🎓 Novo</div>
             {% if user %}
             <div class="flex items-center gap-4">
+                <a href="{{ url_for('my_profiles') }}" class="text-gray-700 hover:text-indigo-600 transition-colors font-medium">
+                    Mis Análisis
+                </a>
+                <a href="{{ url_for('profile') }}" class="text-gray-700 hover:text-indigo-600 transition-colors font-medium">
+                    Nuevo Análisis
+                </a>
                 <span class="text-gray-700">Hola, <strong>{{ user.name }}</strong></span>
                 <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
                     Cerrar Sesión
@@ -105,12 +111,15 @@
         <!-- Actions -->
         <div class="flex justify-center gap-4">
             {% if student_row and student_row.id %}
-            <a href="{{ url_for('dashboard', student_id=student_row.id) }}" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                View Matches
+            <a href="{{ url_for('run_hunter', student_id=student_row.id) }}" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                🔍 Buscar Oportunidades
             </a>
             {% endif %}
+            <a href="{{ url_for('my_profiles') }}" class="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">
+                📋 Ver Mis Análisis
+            </a>
             <a href="{{ url_for('profile') }}" class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-                Analyze Another Profile
+                ➕ Nuevo Análisis
             </a>
         </div>
     </div>

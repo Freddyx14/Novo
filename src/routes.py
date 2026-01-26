@@ -100,12 +100,28 @@ def init_routes(app):
     # Protected Routes
     # =====================
     
+    @app.route('/my-profiles')
+    @login_required
+    def my_profiles():
+        """Display all profiles for the current user"""
+        from src.services.db import get_student_profiles_by_user
+        
+        user = get_current_user()
+        profiles = get_student_profiles_by_user(user['id'])
+        
+        return render_template('my_profiles.html', profiles=profiles, user=user)
+    
     @app.route('/profile', methods=['GET'])
     @login_required
     def profile():
         """Render the profile page with file upload form"""
+        from src.services.db import get_latest_student_profile_by_user
+        
         user = get_current_user()
-        return render_template('profile.html', user=user)
+        # Obtener el último perfil del usuario si existe
+        latest_profile = get_latest_student_profile_by_user(user['id'])
+        
+        return render_template('profile.html', user=user, latest_profile=latest_profile)
     
     @app.route('/profile', methods=['POST'])
     @login_required
@@ -180,30 +196,56 @@ def init_routes(app):
             return redirect(url_for('profile'))
         
         user = get_current_user()
+        
+        # Verificar que el student_row pertenece al usuario actual
+        if student_row and student_row.get('user_id') != user['id']:
+            # Si el perfil no pertenece al usuario, limpiar sesión y redirigir
+            session.pop('analysis_result', None)
+            session.pop('student_row', None)
+            return redirect(url_for('profile'))
+        
         return render_template('results.html', result=result, cv_filename=cv_filename, student_row=student_row, user=user)
 
     @app.route('/test-hunter/<student_id>')
     @login_required
     def run_hunter(student_id):
+        """Run the hunter to find opportunities for a student"""
         try:
-            # 1. Run the Hunter logic
+            from src.services.db import verify_student_ownership
+            
+            user = get_current_user()
+            
+            # Verificar que el perfil pertenece al usuario actual
+            if not verify_student_ownership(student_id, user['id']):
+                return jsonify({'error': 'No tienes permiso para acceder a este perfil'}), 403
+            
+            # Run the Hunter logic
             find_and_save_matches(student_id)
             
-            # 2. Redirect to the Dashboard immediately!
+            # Redirect to the Dashboard
             return redirect(url_for('dashboard', student_id=student_id))
             
         except Exception as e:
-            return f"Error running hunter: {str(e)}"
+            return jsonify({'error': f"Error running hunter: {str(e)}"}), 500
     
     @app.route('/dashboard/<student_id>')
     @login_required
     def dashboard(student_id):
         """Display matches dashboard for a student"""
         try:
+            from src.services.db import get_matches_for_student, get_student_profile_by_id
+            
             user = get_current_user()
-            supabase = _get_supabase_client()
-            response = supabase.table("matches").select("*").eq("student_id", student_id).execute()
-            matches = response.data
-            return render_template('matches.html', matches=matches, student_id=student_id, user=user)
+            
+            # Verificar que el perfil pertenece al usuario y obtener matches
+            student_profile = get_student_profile_by_id(student_id, user['id'])
+            
+            if not student_profile:
+                return jsonify({'error': 'No tienes permiso para acceder a este perfil'}), 403
+            
+            # Obtener matches del estudiante
+            matches = get_matches_for_student(student_id, user['id'])
+            
+            return render_template('matches.html', matches=matches, student_id=student_id, user=user, student_profile=student_profile)
         except Exception as e:
             return jsonify({'error': str(e)}), 500

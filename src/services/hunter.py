@@ -22,14 +22,24 @@ def search_opportunities_with_perplexity(profile_data):
     """
     print("🔎 Asking Perplexity to search for opportunities...")
     
-    # 1. Extract simple keywords (Gemini is better at this, but we'll do a quick grab here)
-    # If you have a 'top_skills' list, use the first one, else default to 'Software'
-    skills = profile_data.get('top_skills', ['General Tech'])[0] 
-    # Use a default location if none exists (or 'Remote')
-    location = "Remote or Global" 
+    # Extract the most important data: ambitions, goals, and summary
+    ambitions = profile_data.get('ambitions', '')
+    career_goals = profile_data.get('career_goals', '')
+    summary = profile_data.get('summary', '')
+    interests = profile_data.get('interests', [])
     
-    # Construct a Google-like search query (Simple is better for Perplexity)
-    search_query = f"{skills} opportunities fellowships programs research internships {location} students 2026"
+    # Skills are secondary - only use if ambitions are missing
+    skills = profile_data.get('top_skills', ['General Tech'])
+    
+    # Build a query focused on what the student WANTS, not just what they know
+    if ambitions or career_goals or summary:
+        # Prioritize their goals and ambitions
+        goal_text = f"{ambitions} {career_goals} {summary}".strip()
+        interest_text = " ".join(interests[:3]) if interests else ""
+        search_query = f"{goal_text} {interest_text} opportunities fellowships programs research internships for students 2026"
+    else:
+        # Fallback to skills if no ambitions are provided
+        search_query = f"{skills[0]} opportunities fellowships programs research internships students 2026"
     
     url = "https://api.perplexity.ai/chat/completions"
     
@@ -40,7 +50,9 @@ def search_opportunities_with_perplexity(profile_data):
                 "role": "system",
                 "content": (
                     "You are a structured data extractor. Your ONLY task is to search for 3 REAL, SPECIFIC opportunities for university students "
-                    "(internships, fellowships, research programs, scholarships, exchange programs, competitions, etc.) found in the search results. \n"
+                    "(internships, fellowships, research programs, scholarships, exchange programs, competitions, etc.) that align with their CAREER GOALS and AMBITIONS. \n"
+                    "Focus on matching opportunities to what the student WANTS TO ACHIEVE and their ASPIRATIONS, not just their current technical skills. "
+                    "Look for opportunities that help them reach their goals, explore their interests, and align with their career vision. \n\n"
                     "You must return ONLY a raw JSON object. Do not write any intro text. Do not say 'Here is the list'. \n"
                     "Use this exact schema:\n"
                     "[\n"
@@ -56,7 +68,7 @@ def search_opportunities_with_perplexity(profile_data):
             },
             {
                 "role": "user",
-                "content": f"Search for 3 current opportunities for university students for this query: {search_query}"
+                "content": f"Search for 3 current opportunities for university students based on their goals and ambitions: {search_query}"
             }
         ]
     }

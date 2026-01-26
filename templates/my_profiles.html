@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mis Perfiles - Novo</title>
+    <!-- TailwindCSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <!-- Navigation Bar -->
+    <nav class="bg-white shadow-md">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="text-2xl font-bold text-indigo-900">🎓 Novo</div>
+            {% if user %}
+            <div class="flex items-center gap-4">
+                <a href="{{ url_for('profile') }}" class="text-gray-700 hover:text-indigo-600 transition-colors">
+                    Nuevo Análisis
+                </a>
+                <span class="text-gray-700">Hola, <strong>{{ user.name }}</strong></span>
+                <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                    Cerrar Sesión
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+    
+    <div class="container mx-auto px-4 py-12 max-w-6xl">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-5xl font-bold text-indigo-900 mb-4">Mis Análisis de Perfil</h1>
+            <p class="text-xl text-indigo-700">Historial de todos tus análisis y oportunidades</p>
+        </div>
+
+        {% if profiles and profiles|length > 0 %}
+        <!-- Profiles Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for profile in profiles %}
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
+                <!-- Profile Header -->
+                <div class="mb-4 pb-4 border-b-2 border-indigo-200">
+                    <h2 class="text-2xl font-bold text-indigo-900 mb-1">
+                        {{ profile.name or 'Perfil' }}
+                    </h2>
+                    <p class="text-sm text-gray-500">
+                        {% if profile.created_at %}
+                        Creado: {{ profile.created_at[:10] }}
+                        {% endif %}
+                    </p>
+                </div>
+
+                <!-- Profile Data Preview -->
+                {% if profile.profile_data %}
+                <div class="mb-4">
+                    {% if profile.profile_data.top_skills %}
+                    <div class="mb-3">
+                        <p class="text-sm font-semibold text-gray-700 mb-2">Habilidades:</p>
+                        <div class="flex flex-wrap gap-2">
+                            {% if profile.profile_data.top_skills is string %}
+                                <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs">
+                                    {{ profile.profile_data.top_skills }}
+                                </span>
+                            {% else %}
+                                {% for skill in profile.profile_data.top_skills[:3] %}
+                                <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs">
+                                    {{ skill }}
+                                </span>
+                                {% endfor %}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if profile.profile_data.summary_of_potential %}
+                    <div class="mb-3">
+                        <p class="text-sm text-gray-600 line-clamp-3">
+                            {{ profile.profile_data.summary_of_potential[:150] }}{% if profile.profile_data.summary_of_potential|length > 150 %}...{% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Actions -->
+                <div class="flex gap-2">
+                    <a href="{{ url_for('dashboard', student_id=profile.id) }}" 
+                       class="flex-1 text-center px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm">
+                        Ver Oportunidades
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <!-- No Profiles Yet -->
+        <div class="bg-white rounded-2xl shadow-xl p-12 text-center">
+            <svg class="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">No tienes análisis aún</h2>
+            <p class="text-gray-600 mb-6">Sube tu CV para obtener tu primer análisis personalizado</p>
+            <a href="{{ url_for('profile') }}" class="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors">
+                Crear Primer Análisis
+            </a>
+        </div>
+        {% endif %}
+
+        <!-- Back to Profile Button -->
+        <div class="text-center mt-8">
+            <a href="{{ url_for('profile') }}" class="inline-block px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors">
+                + Nuevo Análisis de Perfil
+            </a>
+        </div>
+    </div>
+
+    <style>
+        .line-clamp-3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</body>
+</html>

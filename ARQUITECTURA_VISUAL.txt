@@ -1,0 +1,264 @@
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    NOVO - ARQUITECTURA DEL SISTEMA                      │
+└─────────────────────────────────────────────────────────────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                        CAPA DE PRESENTACIÓN                           ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+│              │  │              │  │              │  │              │
+│  login.html  │  │register.html │  │ profile.html │  │ results.html │
+│              │  │              │  │              │  │              │
+└──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘
+       │                 │                 │                 │
+       └─────────────────┴─────────────────┴─────────────────┘
+                              │
+┌──────────────┐  ┌──────────────┐  ┌──────────────────────────────────┐
+│              │  │              │  │                                  │
+│matches.html  │  │my_profiles   │  │        Todos protegidos          │
+│              │  │    .html     │  │        con @login_required       │
+└──────┬───────┘  └──────┬───────┘  └──────────────────────────────────┘
+       │                 │
+       └─────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                        CAPA DE APLICACIÓN                             ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+                          ┌──────────────┐
+                          │   app.py     │
+                          │  (Flask)     │
+                          └──────┬───────┘
+                                 │
+                    ┌────────────┴────────────┐
+                    │                         │
+              ┌─────▼──────┐          ┌──────▼──────┐
+              │            │          │             │
+              │ routes.py  │◄─────────│  session    │
+              │            │          │  (Flask)    │
+              └─────┬──────┘          └─────────────┘
+                    │
+        ┌───────────┼───────────┐
+        │           │           │
+        ▼           ▼           ▼
+
+┌───────────┐ ┌───────────┐ ┌───────────┐
+│           │ │           │ │           │
+│  /login   │ │ /profile  │ │/dashboard │
+│ /register │ │ /results  │ │ /hunter   │
+│  /logout  │ │/my-profiles│           │
+│           │ │           │ │           │
+└───────────┘ └───────────┘ └───────────┘
+  PÚBLICO       PROTEGIDO     PROTEGIDO
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                      CAPA DE SERVICIOS                                ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                     src/services/                                    │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐       │
+│  │                │  │                │  │                │       │
+│  │   auth.py      │  │    db.py       │  │  ai_agent.py   │       │
+│  │                │  │                │  │                │       │
+│  │ • register     │  │ • save_profile │  │ • analyze_cv   │       │
+│  │ • login        │  │ • get_profiles │  │ • gemini API   │       │
+│  │ • logout       │  │ • get_matches  │  │                │       │
+│  │ • @login_req   │  │ • verify_own   │  │                │       │
+│  │                │  │                │  │                │       │
+│  └────────┬───────┘  └────────┬───────┘  └────────┬───────┘       │
+│           │                   │                   │                │
+│           │                   │                   │                │
+│  ┌────────▼───────────────────▼───────────────────▼───────┐       │
+│  │                                                          │       │
+│  │                   hunter.py                              │       │
+│  │                                                          │       │
+│  │  • search_opportunities_with_perplexity()               │       │
+│  │  • match_and_rank_with_gemini()                         │       │
+│  │  • find_and_save_matches()                              │       │
+│  │                                                          │       │
+│  └──────────────────────────────────────────────────────────┘       │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                        CAPA DE DATOS                                  ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        SUPABASE                                      │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  ┌──────────────────┐       ┌──────────────────┐                   │
+│  │   auth.users     │       │    students      │                   │
+│  ├──────────────────┤       ├──────────────────┤                   │
+│  │ • id (UUID)      │◄──────┤ • id             │                   │
+│  │ • email          │  FK   │ • name           │                   │
+│  │ • password       │       │ • profile_data   │                   │
+│  │ • created_at     │       │ • user_id  ───────►                  │
+│  │ • metadata       │       │ • created_at     │                   │
+│  └──────────────────┘       └────────┬─────────┘                   │
+│         ▲                             │                             │
+│         │                             │ FK                          │
+│         │                             │                             │
+│         │                    ┌────────▼─────────┐                  │
+│         │                    │    matches       │                  │
+│         │                    ├──────────────────┤                  │
+│         │                    │ • id             │                  │
+│         │                    │ • student_id ────►                  │
+│         │                    │ • title          │                  │
+│         │                    │ • company        │                  │
+│         │                    │ • location       │                  │
+│         │                    │ • match_score    │                  │
+│         │                    │ • match_reason   │                  │
+│         │                    │ • source_url     │                  │
+│         │                    │ • created_at     │                  │
+│         │                    └──────────────────┘                  │
+│         │                                                           │
+│         │                                                           │
+│         └───────────── Row Level Security (RLS) ────────────────────┤
+│              Solo el usuario puede ver sus propios datos            │
+│                                                                      │
+└──────────────────────────────────────────────────────────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                      SERVICIOS EXTERNOS                               ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│                 │  │                 │  │                 │
+│  Google Gemini  │  │   Perplexity    │  │  Supabase Auth  │
+│                 │  │                 │  │                 │
+│ • Análisis CV   │  │ • Búsqueda de   │  │ • JWT Tokens    │
+│ • Análisis Audio│  │   oportunidades │  │ • Password Hash │
+│ • Match Ranking │  │ • Web scraping  │  │ • Session Mgmt  │
+│                 │  │                 │  │                 │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                    FLUJO DE AUTENTICACIÓN                             ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+1. REGISTRO
+   Usuario → /register → Supabase Auth → auth.users
+                                            ↓
+                                     JWT Token
+                                            ↓
+                                    Flask Session
+
+2. LOGIN
+   Usuario → /login → Supabase Auth verifica → JWT Token
+                                                   ↓
+                                            Flask Session
+                                            {user_id, email, token}
+
+3. ACCESO PROTEGIDO
+   Request → @login_required → Verifica session
+                                      ↓
+                              Si NO autenticado → /login
+                                      ↓
+                              Si autenticado → Procesar
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                    FLUJO DE ANÁLISIS DE PERFIL                        ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+Usuario sube CV + Audio
+        ↓
+ai_agent.analyze_profile()
+        ↓
+Google Gemini procesa
+        ↓
+Resultado: {name, skills, ambitions, summary}
+        ↓
+db.save_student_profile(result, user_id)  ← VINCULA A USUARIO
+        ↓
+INSERT INTO students (name, profile_data, user_id)
+        ↓
+Retorna student_row
+        ↓
+Session guarda analysis_result + student_row
+        ↓
+Redirect → /results
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                  FLUJO DE BÚSQUEDA DE OPORTUNIDADES                   ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+Usuario → "Buscar Oportunidades"
+        ↓
+/test-hunter/<student_id>
+        ↓
+verify_student_ownership(student_id, user_id)  ← VERIFICA OWNERSHIP
+        ↓
+hunter.find_and_save_matches(student_id)
+        ↓
+┌─────────────────────────────────────┐
+│ 1. Obtiene perfil de DB             │
+│ 2. Perplexity busca oportunidades   │
+│ 3. Gemini rankea matches            │
+│ 4. INSERT INTO matches              │
+└─────────────────────────────────────┘
+        ↓
+Redirect → /dashboard/<student_id>
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                      SEGURIDAD POR CAPAS                              ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+CAPA 1: Autenticación
+└─► @login_required en todas las rutas protegidas
+
+CAPA 2: Verificación de Sesión
+└─► get_current_user() obtiene usuario de sesión
+    └─► Si no hay sesión → redirect /login
+
+CAPA 3: Ownership Verification
+└─► verify_student_ownership(student_id, user_id)
+    └─► Si no es dueño → Error 403
+
+CAPA 4: Filtrado de Consultas
+└─► Todas las queries filtran por user_id
+    └─► SELECT ... WHERE user_id = current_user.id
+
+CAPA 5: Row Level Security (RLS)
+└─► Políticas en Supabase
+    └─► auth.uid() = user_id en todas las tablas
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                     NAVEGACIÓN DE LA APLICACIÓN                       ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+                        ┌─────────────┐
+                        │   /login    │
+                        │  /register  │
+                        └──────┬──────┘
+                               │
+                               ▼
+                        ┌─────────────┐
+                    ┌───┤  /profile   ├───┐
+                    │   └─────────────┘   │
+                    │                     │
+                    ▼                     ▼
+            ┌───────────────┐     ┌─────────────┐
+            │   /results    │     │/my-profiles │
+            └───────┬───────┘     └──────┬──────┘
+                    │                    │
+                    ▼                    │
+            ┌───────────────┐            │
+            │ /test-hunter  │            │
+            │  /<student>   │            │
+            └───────┬───────┘            │
+                    │                    │
+                    ▼                    │
+            ┌───────────────┐            │
+            │  /dashboard   │◄───────────┘
+            │  /<student>   │
+            └───────────────┘
+
+═══════════════════════════════════════════════════════════════════════
+                    ✅ SISTEMA COMPLETAMENTE INTEGRADO
+═══════════════════════════════════════════════════════════════════════
