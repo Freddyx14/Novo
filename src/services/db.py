@@ -39,11 +39,12 @@ def get_client() -> Client:
     return _client
 
 
-def save_student_profile(ai_result_json: Dict[str, Any]) -> Dict[str, Any]:
+def save_student_profile(ai_result_json: Dict[str, Any], user_id: Optional[str] = None) -> Dict[str, Any]:
     """
     Inserts a row into `students` table:
       - name: ai_result_json["name"]
       - profile_data: full ai_result_json (jsonb)
+      - user_id: UUID of authenticated user (optional)
 
     Returns the inserted row (as dict) when available.
     """
@@ -53,6 +54,10 @@ def save_student_profile(ai_result_json: Dict[str, Any]) -> Dict[str, Any]:
         "name": name,
         "profile_data": ai_result_json,
     }
+    
+    # Add user_id if provided (for authenticated users)
+    if user_id:
+        payload["user_id"] = user_id
 
     # Insert and return inserted row
     res = (
