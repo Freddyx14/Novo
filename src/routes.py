@@ -123,10 +123,17 @@ def init_routes(app):
         
         return render_template('profile.html', user=user, latest_profile=latest_profile)
     
-    @app.route('/profile', methods=['POST'])
+        @app.route('/profile', methods=['POST'])
+    
+    
     @login_required
     def upload_profile():
         """Handle profile upload (CV PDF and optional audio brain dump)"""
+        import tempfile
+        
+        cv_path = None
+        audio_path = None
+        
         try:
             # Check if CV file is present
             if 'cv_file' not in request.files:
@@ -142,22 +149,29 @@ def init_routes(app):
             if not allowed_file(cv_file.filename, 'pdf'):
                 return jsonify({'error': 'CV must be a PDF file'}), 400
             
-            # Secure CV filename
-            cv_filename = secure_filename(cv_file.filename)
-            cv_path = os.path.join(current_app.config['UPLOAD_FOLDER'], cv_filename)
+            # Use temporary files for Vercel (serverless)
+            cv_suffix = '.pdf'
+            cv_fd, cv_path = tempfile.mkstemp(suffix=cv_suffix)
+            os.close(cv_fd)  # Close file descriptor
             cv_file.save(cv_path)
             
+            cv_filename = secure_filename(cv_file.filename)
+            
             # Handle optional audio file
-            audio_path = None
             audio_file = request.files.get('audio_file')
             
             if audio_file and audio_file.filename != '':
                 # Validate audio file type
                 if not allowed_file(audio_file.filename, 'audio'):
+                    # Clean up CV temp file
+                    if cv_path and os.path.exists(cv_path):
+                        os.unlink(cv_path)
                     return jsonify({'error': 'Audio must be mp3, wav, m4a, or ogg'}), 400
                 
-                audio_filename = secure_filename(audio_file.filename)
-                audio_path = os.path.join(current_app.config['UPLOAD_FOLDER'], audio_filename)
+                # Get audio extension
+                audio_ext = os.path.splitext(audio_file.filename)[1]
+                audio_fd, audio_path = tempfile.mkstemp(suffix=audio_ext)
+                os.close(audio_fd)
                 audio_file.save(audio_path)
             
             # Import and call AI agent analyzer
@@ -169,6 +183,15 @@ def init_routes(app):
             
             # Analyze profile
             result = analyze_profile(cv_path, audio_path)
+            
+            # Clean up temporary files immediately after processing
+            try:
+                if cv_path and os.path.exists(cv_path):
+                    os.unlink(cv_path)
+                if audio_path and os.path.exists(audio_path):
+                    os.unlink(audio_path)
+            except Exception as cleanup_error:
+                print(f"Warning: Failed to cleanup temp files: {cleanup_error}")
 
             # Persist result to Supabase with user_id
             saved_row = save_student_profile(result, user_id=user['id'] if user else None)
@@ -182,6 +205,14 @@ def init_routes(app):
             return redirect(url_for('results'))
             
         except Exception as e:
+            # Clean up temp files on error
+            try:
+                if cv_path and os.path.exists(cv_path):
+                    os.unlink(cv_path)
+                if audio_path and os.path.exists(audio_path):
+                    os.unlink(audio_path)
+            except:
+                pass
             return jsonify({'error': str(e)}), 500
     
     @app.route('/results', methods=['GET'])

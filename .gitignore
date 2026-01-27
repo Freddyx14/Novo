@@ -25,6 +25,8 @@ wheels/
 
 # Environment variables
 .env
+.env.local
+.vercel
 
 # Flask
 instance/
