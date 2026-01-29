@@ -81,27 +81,29 @@ class GeminiAgent:
                 content_parts.append(audio_part)
             
             # Construct the prompt
-            prompt = """You are a world-class career coach. I am providing a student's CV and a voice note 'brain dump'.
+            prompt = """Eres un coach de carrera de clase mundial. Te proporciono el CV de un estudiante y una nota de voz 'brain dump'.
 
-From the CV, extract their hard skills and experience.
+Del CV, extrae sus habilidades técnicas (hard skills) y experiencia.
 
-From the audio, extract their 'hidden potential', ambitions, and cultural context (e.g., being a student in Peru).
+Del audio, extrae su 'potencial oculto', ambiciones y contexto cultural.
 
-Return a JSON object with: 'name', 'top_skills', 'ambitions', and a 'summary_of_potential'.
+Devuelve un objeto JSON con las claves: 'name', 'top_skills', 'ambitions', y 'summary_of_potential'.
+Los valores de texto deben estar explicados en ESPAÑOL.
 
-Format your response as valid JSON only, without markdown code blocks."""
+Formatea tu respuesta solo como JSON válido, sin bloques de código markdown."""
             
             # If no audio file, update the prompt
             if not audio_part:
-                prompt = """You are a world-class career coach. I am providing a student's CV.
+                prompt = """Eres un coach de carrera de clase mundial. Te proporciono el CV de un estudiante.
 
-From the CV, extract their hard skills and experience.
+Del CV, extrae sus habilidades técnicas (hard skills) y experiencia.
 
-Return a JSON object with: 'name', 'top_skills', 'ambitions', and a 'summary_of_potential'.
+Devuelve un objeto JSON con las claves: 'name', 'top_skills', 'ambitions', y 'summary_of_potential'.
+Los valores de texto deben estar explicados en ESPAÑOL.
 
-Since there's no audio, base ambitions and summary_of_potential on the CV content only.
+Como no hay audio, basa las ambiciones y el summary_of_potential solo en el contenido del CV.
 
-Format your response as valid JSON only, without markdown code blocks."""
+Formatea tu respuesta solo como JSON válido, sin bloques de código markdown."""
             
             # Generate content
             print("Sending request to Gemini...")

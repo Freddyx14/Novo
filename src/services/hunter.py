@@ -36,10 +36,10 @@ def search_opportunities_with_perplexity(profile_data):
         # Prioritize their goals and ambitions
         goal_text = f"{ambitions} {career_goals} {summary}".strip()
         interest_text = " ".join(interests[:3]) if interests else ""
-        search_query = f"{goal_text} {interest_text} opportunities fellowships programs research internships for students 2026"
+        search_query = f"{goal_text} {interest_text} oportunidades becas programas investigación pasantías estudiantes 2026"
     else:
         # Fallback to skills if no ambitions are provided
-        search_query = f"{skills[0]} opportunities fellowships programs research internships students 2026"
+        search_query = f"{skills[0]} oportunidades becas programas investigación pasantías estudiantes 2026"
     
     url = "https://api.perplexity.ai/chat/completions"
     
@@ -49,26 +49,27 @@ def search_opportunities_with_perplexity(profile_data):
             {
                 "role": "system",
                 "content": (
-                    "You are a structured data extractor. Your ONLY task is to search for 3 REAL, SPECIFIC opportunities for university students "
-                    "(internships, fellowships, research programs, scholarships, exchange programs, competitions, etc.) that align with their CAREER GOALS and AMBITIONS. \n"
-                    "Focus on matching opportunities to what the student WANTS TO ACHIEVE and their ASPIRATIONS, not just their current technical skills. "
-                    "Look for opportunities that help them reach their goals, explore their interests, and align with their career vision. \n\n"
-                    "You must return ONLY a raw JSON object. Do not write any intro text. Do not say 'Here is the list'. \n"
-                    "Use this exact schema:\n"
+                    "Eres un extractor de datos estructurados. Tu ÚNICA tarea es buscar 3 oportunidades REALES Y ESPECÍFICAS para estudiantes universitarios "
+                    "(pasantías, becas, programas de investigación, intercambios, concursos, etc.) que se alineen con sus OBJETIVOS PROFESIONALES y AMBICIONES. \n"
+                    "Céntrate en encontrar oportunidades que coincidan con lo que el estudiante QUIERE LOGRAR y sus ASPIRACIONES, no solo sus habilidades técnicas actuales. "
+                    "Busca oportunidades que les ayuden a alcanzar sus metas, explorar sus intereses y alinearse con su visión de carrera. \n\n"
+                    "Debes devolver SOLO un objeto JSON sin procesar. No escribas texto introductorio. \n"
+                    "El contenido de los campos (title, company, description, etc.) DEBE estar en ESPAÑOL.\n"
+                    "Usa este esquema exacto:\n"
                     "[\n"
                     "  {\n"
-                    "    \"title\": \"Opportunity Title Here\",\n"
-                    "    \"company\": \"Organization/Institution Name\",\n"
-                    "    \"location\": \"City, Country or Remote\",\n"
+                    "    \"title\": \"Título de la Oportunidad Aquí\",\n"
+                    "    \"company\": \"Nombre de la Organización/Institución\",\n"
+                    "    \"location\": \"Ciudad, País o Remoto\",\n"
                     "    \"url\": \"https://link-to-opportunity.com\",\n"
-                    "    \"description\": \"One short sentence about the opportunity.\"\n"
+                    "    \"description\": \"Una frase corta sobre la oportunidad en Español.\"\n"
                     "  }\n"
                     "]"
                 )
             },
             {
                 "role": "user",
-                "content": f"Search for 3 current opportunities for university students based on their goals and ambitions: {search_query}"
+                "content": f"Busca 3 oportunidades actuales para estudiantes universitarios basadas en sus metas y ambiciones: {search_query}"
             }
         ]
     }
@@ -102,7 +103,13 @@ def evaluate_match(student_profile, opportunity):
     Uses Gemini to evaluate how well a student profile matches an opportunity.
     Returns a dict with 'score' (0-100) and 'reason' (string).
     """
-    prompt = f"""Act as an academic and career advisor. Compare this Student Profile: {json.dumps(student_profile)} with this Opportunity (which could be an internship, fellowship, research program, scholarship, exchange program, or competition): {json.dumps(opportunity)}. Return a JSON with 'score' (0-100) and 'reason' (max 1 sentence)."""
+    prompt = f"""Actúa como un asesor académico y de carrera. Compara este Perfil de Estudiante: {json.dumps(student_profile)} con esta Oportunidad (que podría ser una pasantía, beca, programa de investigación, intercambio o concurso): {json.dumps(opportunity)}. 
+    
+    Devuelve un JSON exacto con los siguientes campos:
+    - 'score': (integer 0-100)
+    - 'description': (string, una descripción breve de 1 o 2 frases sobre de qué trata el programa, en Español)
+    - 'reason': (string, explicación breve de por qué hace match con el perfil del estudiante, en Español)
+    """
     
     try:
         response = gemini_model.generate_content(prompt)
@@ -118,8 +125,8 @@ def evaluate_match(student_profile, opportunity):
         result = json.loads(response_text)
         
         # Validate the response has required fields
-        if 'score' not in result or 'reason' not in result:
-            return {"score": 0, "reason": "Invalid response format from AI"}
+        if 'score' not in result:
+            return {"score": 0, "reason": "Invalid response format from AI", "description": ""}
         
         # Ensure score is an integer between 0 and 100
         score = int(result['score'])
@@ -127,17 +134,18 @@ def evaluate_match(student_profile, opportunity):
         
         return {
             "score": score,
-            "reason": result['reason']
+            "description": result.get('description', ''),
+            "reason": result.get('reason', '')
         }
     
     except json.JSONDecodeError as e:
         print(f"JSON parsing error: {e}")
         print(f"Raw response: {response_text if 'response_text' in locals() else 'No response'}")
-        return {"score": 0, "reason": "Failed to parse AI response"}
+        return {"score": 0, "reason": "Failed to parse AI response", "description": ""}
     
     except Exception as e:
         print(f"Error evaluating match: {e}")
-        return {"score": 0, "reason": "Error during evaluation"}
+        return {"score": 0, "reason": "Error during evaluation", "description": ""}
 
 
 def find_and_save_matches(student_id):
@@ -190,18 +198,22 @@ def find_and_save_matches(student_id):
             evaluation = evaluate_match(profile_data, opportunity)
             score = evaluation['score']
             reason = evaluation['reason']
+            description = evaluation.get('description', '')
             
             print(f"Score: {score}/100 - {reason}")
             
             if score > 70:
                 try:
+                    # Combine description and reason to show both in the existing match_reason column
+                    full_reason = f"{description}\n\n💡 Match: {reason}"
+
                     match_data = {
                         "student_id": student_id,
                         "title": opportunity.get('title', 'Untitled'),
                         "company": opportunity.get('company', 'Unknown'),
                         "location": opportunity.get('location', 'Unknown'),
                         "match_score": score,
-                        "match_reason": reason,
+                        "match_reason": full_reason,
                         "source_url": opportunity.get('url', None)
                     }
                     

@@ -30,7 +30,9 @@ def register_user(email, password, full_name=None):
             "options": {
                 "data": {
                     "full_name": full_name
-                }
+                },
+                # Redirect to confirmation route
+                "email_redirect_to": "https://university-opportunities.vercel.app/confirmacion-exitosa"
             }
         })
         
