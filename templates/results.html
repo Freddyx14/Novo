@@ -4,123 +4,188 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Novo - Resultados del Análisis</title>
-    <!-- TailwindCSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    {% include 'base_styles.html' %}
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-    <!-- Navigation Bar -->
-    <nav class="bg-white shadow-md">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="text-2xl font-bold text-indigo-900">🎓 Novo</div>
+<body class="bg-novo-bg min-h-screen">
+    <!-- Floating Background Elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-20 right-20 w-80 h-80 bg-gradient-to-br from-emerald-200/30 to-teal-200/30 rounded-full blur-3xl animate-float"></div>
+        <div class="absolute bottom-40 left-10 w-72 h-72 bg-gradient-to-br from-indigo-200/20 to-purple-200/20 rounded-full blur-3xl animate-float" style="animation-delay: -3s;"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="novo-navbar fixed top-0 left-0 right-0 z-50 border-b border-gray-100">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 bg-gradient-to-br from-novo-primary to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200 group-hover:scale-110 transition-transform">
+                    <span class="text-white font-bold text-lg">N</span>
+                </div>
+                <span class="text-2xl font-bold novo-gradient-text">Novo</span>
+            </a>
             {% if user %}
             <div class="flex items-center gap-4">
-                <a href="{{ url_for('my_profiles') }}" class="text-gray-700 hover:text-indigo-600 transition-colors font-medium">
+                {% include 'components/upgrade_badge.html' %}
+                <a href="{{ url_for('my_profiles') }}" class="text-novo-text-light hover:text-novo-primary transition-colors font-medium hidden sm:block">
                     Mis Análisis
                 </a>
-                <a href="{{ url_for('profile') }}" class="text-gray-700 hover:text-indigo-600 transition-colors font-medium">
-                    Nuevo Análisis
+                <a href="{{ url_for('profile') }}" class="text-novo-text-light hover:text-novo-primary transition-colors font-medium hidden sm:block">
+                    Mi Perfil
                 </a>
-                <span class="text-gray-700">Hola, <strong>{{ user.name }}</strong></span>
-                <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-                    Cerrar Sesión
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-gradient-to-br from-novo-primary to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                        {{ user.name[0]|upper }}
+                    </div>
+                    <span class="text-novo-text font-medium hidden sm:inline">{{ user.name }}</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="px-4 py-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors font-medium">
+                    Salir
                 </a>
             </div>
             {% endif %}
         </div>
     </nav>
     
-    <div class="container mx-auto px-4 py-12 max-w-5xl">
+    <div class="relative z-10 container mx-auto px-6 pt-28 pb-12 max-w-4xl">
         <!-- Header -->
-        <div class="text-center mb-12">
-            <h1 class="text-5xl font-bold text-indigo-900 mb-4">Novo</h1>
-            <p class="text-xl text-indigo-700">Resultados del Análisis de Perfil</p>
+        <div class="text-center mb-10 animate-slide-up">
+            <div class="inline-flex items-center gap-2 bg-emerald-50 text-novo-success px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                </svg>
+                Análisis Completado
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold text-novo-text mb-4">
+                Tu <span class="novo-gradient-text">Perfil</span>
+            </h1>
+            <p class="text-xl text-novo-text-light">
+                Descubre lo que nuestra IA encontró sobre ti
+            </p>
         </div>
 
         <!-- Results Card -->
-        <div class="bg-white rounded-2xl shadow-xl p-8 mb-8">
-            <!-- Name Section -->
+        <div class="novo-card bg-white rounded-3xl shadow-xl shadow-gray-200/50 overflow-hidden mb-8 animate-slide-up" style="animation-delay: 0.1s;">
+            <!-- Header with gradient and name -->
             {% if result.name %}
-            <div class="mb-8 pb-6 border-b-2 border-indigo-200">
-                <h2 class="text-3xl font-bold text-indigo-900 mb-2">{{ result.name }}</h2>
-                <p class="text-indigo-600">Análisis de Perfil Estudiantil</p>
+            <div class="bg-gradient-to-r from-novo-primary via-purple-500 to-indigo-600 px-8 py-8">
+                <div class="flex items-center gap-4">
+                    <div class="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center animate-bounce-subtle">
+                        <span class="text-4xl">🎯</span>
+                    </div>
+                    <div>
+                        <h2 class="text-3xl font-bold text-white">{{ result.name }}</h2>
+                        <p class="text-indigo-100">Perfil Analizado con IA</p>
+                    </div>
+                </div>
             </div>
             {% endif %}
 
-            <!-- Top Skills Section -->
-            {% if result.top_skills %}
-            <div class="mb-8">
-                <h3 class="text-2xl font-semibold text-indigo-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                    </svg>
-                    Habilidades Principales
-                </h3>
-                <div class="flex flex-wrap gap-3">
-                    {% if result.top_skills is string %}
-                        <p class="text-gray-700">{{ result.top_skills }}</p>
-                    {% else %}
-                        {% for skill in result.top_skills %}
-                        <span class="px-4 py-2 bg-indigo-100 text-indigo-800 rounded-full font-medium text-sm">
-                            {{ skill }}
+            <div class="p-8 space-y-8">
+                <!-- Top Skills Section -->
+                {% if result.top_skills %}
+                <div class="stagger-item">
+                    <h3 class="flex items-center gap-3 text-xl font-bold text-novo-text mb-4">
+                        <span class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-novo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                            </svg>
                         </span>
-                        {% endfor %}
-                    {% endif %}
-                </div>
-            </div>
-            {% endif %}
-
-            <!-- Ambitions Section -->
-            {% if result.ambitions %}
-            <div class="mb-8">
-                <h3 class="text-2xl font-semibold text-indigo-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                    </svg>
-                    Ambiciones
-                </h3>
-                <div class="bg-indigo-50 rounded-lg p-6">
-                    {% if result.ambitions is sequence and result.ambitions is not string %}
-                        <ul class="list-disc list-inside space-y-2 text-gray-700 leading-relaxed">
-                            {% for ambition in result.ambitions %}
-                                <li>{{ ambition }}</li>
+                        Habilidades Principales
+                    </h3>
+                    <div class="flex flex-wrap gap-3">
+                        {% if result.top_skills is string %}
+                            <p class="text-novo-text-light">{{ result.top_skills }}</p>
+                        {% else %}
+                            {% for skill in result.top_skills %}
+                            <span class="novo-pill bg-gradient-to-r from-indigo-50 to-purple-50 text-novo-primary border border-indigo-100 px-5 py-2.5 text-sm font-semibold">
+                                {{ skill }}
+                            </span>
                             {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ result.ambitions }}</p>
-                    {% endif %}
+                        {% endif %}
+                    </div>
                 </div>
-            </div>
-            {% endif %}
+                {% endif %}
 
-            <!-- Summary of Potential Section -->
-            {% if result.summary_of_potential %}
-            <div class="mb-8">
-                <h3 class="text-2xl font-semibold text-indigo-800 mb-4 flex items-center">
-                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    Resumen de Potencial
-                </h3>
-                <div class="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-6 border-l-4 border-indigo-500">
-                    <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ result.summary_of_potential }}</p>
+                <!-- Ambitions Section -->
+                {% if result.ambitions %}
+                <div class="stagger-item">
+                    <h3 class="flex items-center gap-3 text-xl font-bold text-novo-text mb-4">
+                        <span class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-novo-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                            </svg>
+                        </span>
+                        Ambiciones
+                    </h3>
+                    <div class="bg-gradient-to-br from-emerald-50/50 to-teal-50/50 rounded-2xl p-6 border border-emerald-100/50">
+                        {% if result.ambitions is sequence and result.ambitions is not string %}
+                            <ul class="space-y-3 text-novo-text leading-relaxed">
+                                {% for ambition in result.ambitions %}
+                                <li class="flex items-start gap-3">
+                                    <svg class="w-5 h-5 text-novo-success flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                    </svg>
+                                    {{ ambition }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        {% else %}
+                            <p class="text-novo-text leading-relaxed whitespace-pre-wrap">{{ result.ambitions }}</p>
+                        {% endif %}
+                    </div>
                 </div>
+                {% endif %}
+
+                <!-- Summary of Potential Section -->
+                {% if result.summary_of_potential %}
+                <div class="stagger-item">
+                    <h3 class="flex items-center gap-3 text-xl font-bold text-novo-text mb-4">
+                        <span class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center">
+                            <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                            </svg>
+                        </span>
+                        Resumen de Potencial
+                    </h3>
+                    <div class="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-2xl p-6 border-l-4 border-novo-primary">
+                        <p class="text-novo-text leading-relaxed whitespace-pre-wrap">{{ result.summary_of_potential }}</p>
+                    </div>
+                </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
 
         <!-- Actions -->
-        <div class="flex justify-center gap-4">
+        <div class="flex flex-col sm:flex-row justify-center gap-4 animate-fade-in" style="animation-delay: 0.4s;">
             {% if student_row and student_row.id %}
-            <a href="{{ url_for('run_hunter', student_id=student_row.id) }}" class="px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                🔍 Buscar Oportunidades
+            <a href="{{ url_for('run_hunter', student_id=student_row.id) }}" 
+               class="novo-btn flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-novo-success to-emerald-600 text-white rounded-xl font-semibold shadow-lg shadow-emerald-200 hover:shadow-xl">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                Buscar Oportunidades
             </a>
             {% endif %}
-            <a href="{{ url_for('my_profiles') }}" class="px-6 py-3 bg-purple-600 text-white rounded-lg font-semibold hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">
-                📋 Ver Mis Análisis
+            <a href="{{ url_for('my_profiles') }}" 
+               class="novo-btn flex items-center justify-center gap-2 px-8 py-4 bg-white text-novo-primary border-2 border-novo-primary rounded-xl font-semibold hover:bg-indigo-50">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Mis Análisis
             </a>
-            <a href="{{ url_for('profile') }}" class="px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
-                ➕ Nuevo Análisis
-            </a>
+        </div>
+
+        <!-- Social Proof -->
+        <div class="mt-10 text-center animate-fade-in" style="animation-delay: 0.6s;">
+            <div class="inline-flex items-center gap-4 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg">
+                <div class="flex -space-x-2">
+                    <img src="{{ url_for('static', filename='images/users/user-1.jpg') }}" alt="Usuario Novo" class="w-8 h-8 rounded-full border-2 border-white object-cover">
+                    <img src="{{ url_for('static', filename='images/users/user-2.jpg') }}" alt="Usuario Novo" class="w-8 h-8 rounded-full border-2 border-white object-cover">
+                    <img src="{{ url_for('static', filename='images/users/user-3.jpg') }}" alt="Usuario Novo" class="w-8 h-8 rounded-full border-2 border-white object-cover">
+                </div>
+                <p class="text-novo-text-light text-sm">
+                    <span class="font-semibold text-novo-text">500+ estudiantes</span> encontraron su oportunidad
+                </p>
+            </div>
         </div>
     </div>
 </body>

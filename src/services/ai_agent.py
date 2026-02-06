@@ -36,16 +36,17 @@ class GeminiAgent:
         
         print("Gemini client initialized successfully")
     
-    def analyze_profile(self, cv_file_path, audio_file_path=None):
+    def analyze_profile(self, cv_file_path, audio_file_path=None, brain_dump_text=None):
         """
-        Analyze CV and optional audio brain dump using Gemini Flash Lite
+        Analyze CV and optional audio brain dump OR text brain dump using Gemini Flash Lite
         
         Args:
             cv_file_path: Path to the uploaded PDF CV
             audio_file_path: Path to the uploaded audio file (brain dump), optional
+            brain_dump_text: Text brain dump written by the user, optional (mutually exclusive with audio)
         
         Returns:
-            dict: Analysis results with name, top_skills, ambitions, summary_of_potential
+            dict: Analysis results with enriched profile schema
         """
         try:
             # Read CV PDF file
@@ -80,30 +81,53 @@ class GeminiAgent:
                 print(f"Audio file loaded: {audio_file_path}")
                 content_parts.append(audio_part)
             
-            # Construct the prompt
-            prompt = """Eres un coach de carrera de clase mundial. Te proporciono el CV de un estudiante y una nota de voz 'brain dump'.
+            # Construct the prompt based on what additional context we have
+            base_schema = """Devuelve un objeto JSON con las siguientes claves:
+- 'name': nombre completo del estudiante
+- 'university': universidad o institución educativa actual
+- 'career': carrera o programa de estudios (ej: "Ingeniería en Sistemas", "Medicina", "Administración de Empresas")
+- 'study_level': nivel de estudios actual ("pregrado", "licenciatura", "maestría", "doctorado", "recién_egresado")
+- 'country': país de residencia o donde estudia
+- 'languages': array de idiomas que domina con nivel (ej: ["Español (nativo)", "Inglés (avanzado)"])
+- 'top_skills': array de máximo 5 habilidades técnicas principales
+- 'interests': array de áreas de interés académico o profesional (ej: ["inteligencia artificial", "finanzas", "investigación médica"])
+- 'ambitions': descripción de sus metas y aspiraciones profesionales a mediano/largo plazo
+- 'preferred_opportunity_types': array de tipos de oportunidades que busca (ej: ["becas", "pasantías", "investigación", "intercambio", "voluntariado"])
+- 'availability': disponibilidad del estudiante ("tiempo_completo", "medio_tiempo", "verano", "flexible")
+- 'summary_of_potential': resumen de 2-3 oraciones sobre el potencial único del estudiante
 
-Del CV, extrae sus habilidades técnicas (hard skills) y experiencia.
-
-Del audio, extrae su 'potencial oculto', ambiciones y contexto cultural.
-
-Devuelve un objeto JSON con las claves: 'name', 'top_skills', 'ambitions', y 'summary_of_potential'.
-Los valores de texto deben estar explicados en ESPAÑOL.
-
+Si algún campo no se puede inferir, usa valores razonables basados en el contexto o "No especificado".
 Formatea tu respuesta solo como JSON válido, sin bloques de código markdown."""
             
-            # If no audio file, update the prompt
-            if not audio_part:
-                prompt = """Eres un coach de carrera de clase mundial. Te proporciono el CV de un estudiante.
+            # Determine which type of brain dump we have (audio, text, or none)
+            if audio_part:
+                # Audio brain dump
+                prompt = f"""Eres un coach de carrera de clase mundial y experto en análisis de perfiles universitarios. Te proporciono el CV de un estudiante y una nota de voz donde cuenta sobre sí mismo.
 
-Del CV, extrae sus habilidades técnicas (hard skills) y experiencia.
+Del CV, extrae información detallada sobre el estudiante.
+Del audio, extrae su 'potencial oculto', ambiciones, pasiones y contexto personal.
 
-Devuelve un objeto JSON con las claves: 'name', 'top_skills', 'ambitions', y 'summary_of_potential'.
-Los valores de texto deben estar explicados en ESPAÑOL.
+{base_schema}"""
+            elif brain_dump_text and brain_dump_text.strip():
+                # Text brain dump - append it to content_parts as text
+                prompt = f"""Eres un coach de carrera de clase mundial y experto en análisis de perfiles universitarios. Te proporciono el CV de un estudiante y un texto donde el estudiante cuenta sobre sí mismo.
 
-Como no hay audio, basa las ambiciones y el summary_of_potential solo en el contenido del CV.
+Del CV, extrae información detallada sobre el estudiante.
+Del texto personal del estudiante, extrae su 'potencial oculto', ambiciones, pasiones y contexto personal.
 
-Formatea tu respuesta solo como JSON válido, sin bloques de código markdown."""
+TEXTO PERSONAL DEL ESTUDIANTE:
+\"\"\"
+{brain_dump_text.strip()}
+\"\"\"
+
+{base_schema}"""
+            else:
+                # No additional context, just CV
+                prompt = f"""Eres un coach de carrera de clase mundial y experto en análisis de perfiles universitarios. Te proporciono el CV de un estudiante.
+
+Del CV, extrae información detallada sobre el estudiante. Infiere sus ambiciones y potencial basándote únicamente en el contenido del CV.
+
+{base_schema}"""
             
             # Generate content
             print("Sending request to Gemini...")
@@ -141,10 +165,18 @@ Formatea tu respuesta solo como JSON válido, sin bloques de código markdown.""
                         'summary_of_potential': response_text
                     }
             
-            # Ensure all required fields are present
+            # Ensure all required fields are present with enriched schema
             result.setdefault('name', 'Unknown')
+            result.setdefault('university', 'No especificado')
+            result.setdefault('career', 'No especificado')
+            result.setdefault('study_level', 'pregrado')
+            result.setdefault('country', 'No especificado')
+            result.setdefault('languages', ['Español'])
             result.setdefault('top_skills', [])
+            result.setdefault('interests', [])
             result.setdefault('ambitions', 'No ambitions specified')
+            result.setdefault('preferred_opportunity_types', ['becas', 'pasantías'])
+            result.setdefault('availability', 'flexible')
             result.setdefault('summary_of_potential', 'No summary available')
             
             return result
@@ -154,16 +186,17 @@ Formatea tu respuesta solo como JSON válido, sin bloques de código markdown.""
             raise
 
 
-def analyze_profile(cv_file_path, audio_file_path=None):
+def analyze_profile(cv_file_path, audio_file_path=None, brain_dump_text=None):
     """
     Convenience function to analyze profile using Gemini agent
     
     Args:
         cv_file_path: Path to the uploaded PDF CV
         audio_file_path: Path to the uploaded audio file (brain dump), optional
+        brain_dump_text: Text brain dump written by the user, optional
     
     Returns:
-        dict: Analysis results with name, top_skills, ambitions, summary_of_potential
+        dict: Analysis results with enriched profile schema
     """
     agent = GeminiAgent()
-    return agent.analyze_profile(cv_file_path, audio_file_path)
+    return agent.analyze_profile(cv_file_path, audio_file_path, brain_dump_text)

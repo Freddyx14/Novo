@@ -3,22 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novo - Subir Perfil</title>
-    <!-- TailwindCSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Novo - Crear Perfil</title>
+    {% include 'base_styles.html' %}
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-    <!-- Navigation Bar -->
-    <nav class="bg-white shadow-md">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="text-2xl font-bold text-indigo-900">🎓 Novo</div>
+<body class="bg-novo-bg min-h-screen">
+    <!-- Floating Background Elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-20 right-10 w-72 h-72 bg-gradient-to-br from-indigo-200/30 to-purple-200/30 rounded-full blur-3xl animate-float"></div>
+        <div class="absolute bottom-20 left-10 w-96 h-96 bg-gradient-to-br from-emerald-200/20 to-teal-200/20 rounded-full blur-3xl animate-float" style="animation-delay: -3s;"></div>
+        <div class="absolute top-1/2 left-1/2 w-64 h-64 bg-gradient-to-br from-amber-200/20 to-orange-200/20 rounded-full blur-3xl animate-float" style="animation-delay: -5s;"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="novo-navbar fixed top-0 left-0 right-0 z-50 border-b border-gray-100">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 bg-gradient-to-br from-novo-primary to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200 group-hover:scale-110 transition-transform">
+                    <span class="text-white font-bold text-lg">N</span>
+                </div>
+                <span class="text-2xl font-bold novo-gradient-text">Novo</span>
+            </a>
             {% if user %}
             <div class="flex items-center gap-4">
-                <a href="{{ url_for('my_profiles') }}" class="text-gray-700 hover:text-indigo-600 transition-colors font-medium">
+                {% include 'components/upgrade_badge.html' %}
+                <a href="{{ url_for('my_profiles') }}" class="text-novo-text-light hover:text-novo-primary transition-colors font-medium">
                     Mis Análisis
                 </a>
-                <span class="text-gray-700">Hola, <strong>{{ user.name }}</strong></span>
-                <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-gradient-to-br from-novo-primary to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                        {{ user.name[0]|upper }}
+                    </div>
+                    <span class="text-novo-text font-medium hidden sm:block">{{ user.name }}</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="px-4 py-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors font-medium">
                     Cerrar Sesión
                 </a>
             </div>
@@ -26,100 +43,396 @@
         </div>
     </nav>
     
-    <div class="container mx-auto px-4 py-12 max-w-4xl">
+    <div class="relative z-10 container mx-auto px-6 pt-28 pb-12 max-w-3xl">
         <!-- Header -->
-        <div class="text-center mb-12">
-            <h1 class="text-5xl font-bold text-indigo-900 mb-4">Novo</h1>
-            <p class="text-xl text-indigo-700">Encuentra oportunidades personalizadas: Prácticas, Fellowships, Becas, Programs, conferencias y más</p>
-            <p class="text-lg text-indigo-600 mt-2">Sube tu perfil para comenzar</p>
+        <div class="text-center mb-10 animate-slide-up">
+            <div class="inline-flex items-center gap-2 bg-indigo-50 text-novo-primary px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                Nuevo Perfil
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold text-novo-text mb-4">
+                Crea tu <span class="novo-gradient-text">Perfil</span>
+            </h1>
+            <p class="text-xl text-novo-text-light max-w-xl mx-auto">
+                Sube tu CV y cuéntanos sobre ti para encontrar oportunidades personalizadas
+            </p>
         </div>
 
-        <!-- Upload Form -->
-        <div class="bg-white rounded-2xl shadow-xl p-8">
+        <!-- Upload Form Card -->
+        <div class="novo-card bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-8 animate-slide-up" style="animation-delay: 0.1s;">
             <form id="profileForm" enctype="multipart/form-data" class="space-y-8">
                 <!-- CV Upload Section -->
-                <div class="space-y-4">
-                    <label class="block">
-                        <span class="text-gray-700 font-semibold text-lg">Curriculum Vitae (PDF)</span>
-                        <div class="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-400 transition-colors">
-                            <div class="space-y-2 text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                                    <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
-                                </svg>
-                                <div class="flex text-sm text-gray-600">
-                                    <label for="cv_file" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                                        <span>Seleccionar archivo PDF</span>
-                                        <input id="cv_file" name="cv_file" type="file" accept=".pdf" class="sr-only" required>
-                                    </label>
-                                    <p class="pl-1">o arrastra y suelta</p>
-                                </div>
-                                <p class="text-xs text-gray-500">PDF hasta 16MB</p>
-                                <p id="cv_file_name" class="text-sm text-indigo-600 font-medium hidden"></p>
-                            </div>
-                        </div>
+                <div class="space-y-3">
+                    <label class="flex items-center gap-2 text-novo-text font-semibold text-lg">
+                        <span class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-novo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                            </svg>
+                        </span>
+                        Curriculum Vitae
+                        <span class="text-red-500">*</span>
                     </label>
+                    <div id="cv_dropzone" class="relative border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center hover:border-novo-primary hover:bg-indigo-50/30 transition-all cursor-pointer group">
+                        <input id="cv_file" name="cv_file" type="file" accept=".pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" required>
+                        <div class="space-y-3">
+                            <div class="w-16 h-16 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform">
+                                <svg class="w-8 h-8 text-novo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-novo-text font-medium">Arrastra tu CV aquí o <span class="text-novo-primary">selecciona archivo</span></p>
+                                <p class="text-novo-text-light text-sm mt-1">PDF hasta 16MB</p>
+                            </div>
+                            <p id="cv_file_name" class="hidden text-novo-success font-semibold flex items-center justify-center gap-2">
+                                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+                                <span></span>
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
-                <!-- Audio Upload Section -->
-                <div class="space-y-4">
-                    <label class="block">
-                        <span class="text-gray-700 font-semibold text-lg">Cuentanos más de ti, tu historia, metas, ambiciones, sueños, etc (Audio)</span>
-                        <div class="mt-2 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-indigo-400 transition-colors">
-                            <div class="space-y-2 text-center">
-                                <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                                </svg>
-                                <div class="flex text-sm text-gray-600">
-                                    <label for="audio_file" class="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-indigo-500">
-                                        <span>Seleccionar archivo de audio</span>
-                                        <input id="audio_file" name="audio_file" type="file" accept=".mp3,.wav,.m4a,.ogg" class="sr-only">
-                                    </label>
-                                    <p class="pl-1">o arrastra y suelta</p>
-                                </div>
-                                <p class="text-xs text-gray-500">MP3, WAV, M4A, o OGG hasta 16MB (opcional)</p>
-                                <p id="audio_file_name" class="text-sm text-indigo-600 font-medium hidden"></p>
-                            </div>
-                        </div>
+                <!-- Brain Dump Section - Chat Style -->
+                <div class="space-y-3">
+                    <label class="flex items-center gap-2 text-novo-text font-semibold text-lg">
+                        <span class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-novo-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                            </svg>
+                        </span>
+                        Cuéntanos sobre ti
+                        <span class="text-novo-text-light text-sm font-normal">(opcional)</span>
                     </label>
+                    
+                    <!-- Guiding Questions -->
+                    <div class="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-100">
+                        <p class="text-sm text-emerald-700 font-medium mb-2">💡 Algunas ideas para inspirarte:</p>
+                        <ul class="text-sm text-emerald-600 space-y-1">
+                            <li>• ¿Quién eres y de dónde vienes?</li>
+                            <li>• ¿Qué te apasiona dentro y fuera de tu carrera?</li>
+                            <li>• ¿Cuáles son tus metas profesionales a 5-10 años?</li>
+                            <li>• ¿Qué tipo de oportunidades buscas? (internships, becas, congresos, etc.)</li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Chat-style Input Container -->
+                    <div id="brain_dump_container" class="relative border-2 border-gray-200 rounded-2xl bg-white overflow-hidden transition-all focus-within:border-novo-success focus-within:ring-4 focus-within:ring-emerald-100">
+                        <!-- Textarea for text input -->
+                        <textarea 
+                            id="brain_dump_text" 
+                            name="brain_dump_text" 
+                            rows="5"
+                            class="w-full p-4 pr-16 resize-none focus:outline-none text-novo-text placeholder-gray-400 disabled:bg-gray-50 disabled:text-gray-400"
+                            placeholder="Cuéntame un poco más de ti... ¿Quién eres? ¿Qué te apasiona? ¿Cuáles son tus metas y qué tipo de oportunidades estás buscando?"
+                        ></textarea>
+                        
+                        <!-- Recording Overlay (shown when recording) -->
+                        <div id="recording_overlay" class="hidden absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 flex flex-col items-center justify-center">
+                            <!-- Audio Wave Animation -->
+                            <div class="flex items-center gap-1 mb-4">
+                                <div class="audio-wave-bar w-1 bg-novo-success rounded-full animate-pulse" style="height: 20px; animation-delay: 0ms;"></div>
+                                <div class="audio-wave-bar w-1 bg-novo-success rounded-full animate-pulse" style="height: 35px; animation-delay: 100ms;"></div>
+                                <div class="audio-wave-bar w-1 bg-novo-success rounded-full animate-pulse" style="height: 25px; animation-delay: 200ms;"></div>
+                                <div class="audio-wave-bar w-1 bg-novo-success rounded-full animate-pulse" style="height: 40px; animation-delay: 300ms;"></div>
+                                <div class="audio-wave-bar w-1 bg-novo-success rounded-full animate-pulse" style="height: 30px; animation-delay: 400ms;"></div>
+                                <div class="audio-wave-bar w-1 bg-novo-success rounded-full animate-pulse" style="height: 45px; animation-delay: 500ms;"></div>
+                                <div class="audio-wave-bar w-1 bg-novo-success rounded-full animate-pulse" style="height: 28px; animation-delay: 600ms;"></div>
+                                <div class="audio-wave-bar w-1 bg-novo-success rounded-full animate-pulse" style="height: 38px; animation-delay: 700ms;"></div>
+                                <div class="audio-wave-bar w-1 bg-novo-success rounded-full animate-pulse" style="height: 22px; animation-delay: 800ms;"></div>
+                            </div>
+                            <p class="text-novo-success font-semibold text-lg">Grabando...</p>
+                            <p id="recording_timer" class="text-emerald-600 font-mono text-2xl mt-2">00:00</p>
+                            <p class="text-emerald-500 text-sm mt-2">Haz clic en el micrófono para detener</p>
+                        </div>
+                        
+                        <!-- Audio Recorded Success State -->
+                        <div id="audio_recorded_overlay" class="hidden absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 flex flex-col items-center justify-center">
+                            <div class="w-16 h-16 bg-novo-success rounded-full flex items-center justify-center mb-3">
+                                <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                            <p class="text-novo-success font-semibold text-lg">¡Audio grabado!</p>
+                            <p id="audio_duration" class="text-emerald-600 text-sm mt-1">Duración: 00:00</p>
+                            <button type="button" id="clear_audio_btn" class="mt-3 text-red-500 hover:text-red-600 text-sm font-medium flex items-center gap-1">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                                Eliminar y escribir texto
+                            </button>
+                        </div>
+                        
+                        <!-- Microphone Button -->
+                        <button 
+                            type="button" 
+                            id="mic_button"
+                            class="absolute right-3 bottom-3 w-12 h-12 bg-gradient-to-br from-novo-success to-emerald-600 hover:from-emerald-600 hover:to-teal-600 text-white rounded-xl flex items-center justify-center shadow-lg shadow-emerald-200 transition-all hover:scale-105 active:scale-95 disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none"
+                            title="Grabar audio"
+                        >
+                            <svg id="mic_icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/>
+                            </svg>
+                            <svg id="stop_icon" class="w-6 h-6 hidden" fill="currentColor" viewBox="0 0 24 24">
+                                <rect x="6" y="6" width="12" height="12" rx="2"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- Hidden file input for audio blob -->
+                    <input type="file" id="audio_file" name="audio_file" class="hidden" accept="audio/*">
+                    
+                    <!-- Mode indicator -->
+                    <p id="input_mode_indicator" class="text-xs text-novo-text-light text-center">
+                        Escribe tu historia o graba un audio con el botón <span class="text-novo-success">●</span>
+                    </p>
                 </div>
 
                 <!-- Submit Button -->
                 <div class="pt-4">
-                    <button type="submit" id="submitBtn" class="w-full bg-indigo-600 text-white py-4 px-6 rounded-lg font-semibold text-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed">
-                        Analizar Perfil
+                    <button type="submit" id="submitBtn" 
+                            class="novo-btn w-full bg-gradient-to-r from-novo-primary to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-200 hover:shadow-2xl disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none disabled:cursor-not-allowed flex items-center justify-center gap-3">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+                        </svg>
+                        Analizar Perfil con IA
                     </button>
                 </div>
 
-                <!-- Loading Spinner (Hidden by default) -->
-                <div id="loading" class="hidden text-center py-4">
-                    <div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-                    <p class="mt-2 text-indigo-600">Procesando tu perfil...</p>
+                <!-- Loading State -->
+                <div id="loading" class="hidden">
+                    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-8 text-center border border-indigo-100">
+                        <div class="novo-spinner mx-auto mb-4 w-12 h-12 border-4"></div>
+                        <p class="text-novo-text font-semibold text-lg mb-2">Analizando tu perfil...</p>
+                        <p class="text-novo-text-light text-sm">Nuestra IA está procesando tu información</p>
+                    </div>
                 </div>
 
-                <!-- Success/Error Messages -->
-                <div id="message" class="hidden rounded-lg p-4"></div>
+                <!-- Message Display -->
+                <div id="message" class="hidden rounded-2xl p-5"></div>
             </form>
+        </div>
+
+        <!-- Features List -->
+        <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in" style="animation-delay: 0.3s;">
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-novo-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="text-novo-text font-semibold">100% Privado</h4>
+                    <p class="text-novo-text-light text-sm">Tu información está segura</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-novo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="text-novo-text font-semibold">Análisis en segundos</h4>
+                    <p class="text-novo-text-light text-sm">IA de última generación</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-3">
+                <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h4 class="text-novo-text font-semibold">Oportunidades reales</h4>
+                    <p class="text-novo-text-light text-sm">Verificadas y actualizadas</p>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Handle file name display
+        // ===== Audio Recording State =====
+        let mediaRecorder = null;
+        let audioChunks = [];
+        let recordingStartTime = null;
+        let timerInterval = null;
+        let recordedBlob = null;
+        
+        // DOM Elements
+        const brainDumpText = document.getElementById('brain_dump_text');
+        const micButton = document.getElementById('mic_button');
+        const micIcon = document.getElementById('mic_icon');
+        const stopIcon = document.getElementById('stop_icon');
+        const recordingOverlay = document.getElementById('recording_overlay');
+        const audioRecordedOverlay = document.getElementById('audio_recorded_overlay');
+        const recordingTimer = document.getElementById('recording_timer');
+        const audioDuration = document.getElementById('audio_duration');
+        const clearAudioBtn = document.getElementById('clear_audio_btn');
+        const audioFileInput = document.getElementById('audio_file');
+        const inputModeIndicator = document.getElementById('input_mode_indicator');
+        
+        // Format time as MM:SS
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60).toString().padStart(2, '0');
+            const secs = (seconds % 60).toString().padStart(2, '0');
+            return `${mins}:${secs}`;
+        }
+        
+        // Update timer display
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+            recordingTimer.textContent = formatTime(elapsed);
+        }
+        
+        // Block text input when recording or audio recorded
+        function setTextInputBlocked(blocked) {
+            brainDumpText.disabled = blocked;
+            if (blocked) {
+                brainDumpText.classList.add('cursor-not-allowed');
+            } else {
+                brainDumpText.classList.remove('cursor-not-allowed');
+                brainDumpText.value = '';
+            }
+        }
+        
+        // Block mic button when typing
+        function setMicBlocked(blocked) {
+            micButton.disabled = blocked;
+        }
+        
+        // Listen for text input to block mic
+        brainDumpText.addEventListener('input', function() {
+            if (this.value.trim().length > 0) {
+                setMicBlocked(true);
+                inputModeIndicator.innerHTML = 'Modo: <span class="text-novo-primary font-medium">Texto</span> — Borra el texto para grabar audio';
+            } else {
+                setMicBlocked(false);
+                inputModeIndicator.innerHTML = 'Escribe tu historia o graba un audio con el botón <span class="text-novo-success">●</span>';
+            }
+        });
+        
+        // Start recording
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                
+                // Determine supported MIME type
+                const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 
+                                 MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/ogg';
+                
+                mediaRecorder = new MediaRecorder(stream, { mimeType });
+                audioChunks = [];
+                
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+                
+                mediaRecorder.onstop = () => {
+                    // Stop all tracks
+                    stream.getTracks().forEach(track => track.stop());
+                    
+                    // Create blob
+                    recordedBlob = new Blob(audioChunks, { type: mimeType });
+                    
+                    // Calculate duration
+                    const duration = Math.floor((Date.now() - recordingStartTime) / 1000);
+                    audioDuration.textContent = `Duración: ${formatTime(duration)}`;
+                    
+                    // Show recorded state
+                    recordingOverlay.classList.add('hidden');
+                    audioRecordedOverlay.classList.remove('hidden');
+                    
+                    // Reset button
+                    micIcon.classList.remove('hidden');
+                    stopIcon.classList.add('hidden');
+                    
+                    // Stop timer
+                    clearInterval(timerInterval);
+                    
+                    // Update indicator
+                    inputModeIndicator.innerHTML = 'Modo: <span class="text-novo-success font-medium">Audio grabado</span> ✓';
+                };
+                
+                // Start recording
+                mediaRecorder.start();
+                recordingStartTime = Date.now();
+                
+                // Show recording overlay
+                setTextInputBlocked(true);
+                recordingOverlay.classList.remove('hidden');
+                micIcon.classList.add('hidden');
+                stopIcon.classList.remove('hidden');
+                
+                // Start timer
+                timerInterval = setInterval(updateTimer, 1000);
+                
+                // Update indicator
+                inputModeIndicator.innerHTML = '<span class="text-red-500 animate-pulse">● Grabando...</span>';
+                
+            } catch (err) {
+                console.error('Error accessing microphone:', err);
+                alert('No se pudo acceder al micrófono. Por favor, permite el acceso e intenta de nuevo.');
+            }
+        }
+        
+        // Stop recording
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                mediaRecorder.stop();
+            }
+        }
+        
+        // Clear recorded audio
+        function clearAudio() {
+            recordedBlob = null;
+            audioRecordedOverlay.classList.add('hidden');
+            setTextInputBlocked(false);
+            inputModeIndicator.innerHTML = 'Escribe tu historia o graba un audio con el botón <span class="text-novo-success">●</span>';
+            
+            // Clear the file input
+            audioFileInput.value = '';
+        }
+        
+        // Mic button click handler
+        micButton.addEventListener('click', function() {
+            if (mediaRecorder && mediaRecorder.state === 'recording') {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+        
+        // Clear audio button
+        clearAudioBtn.addEventListener('click', clearAudio);
+
+        // Handle file name display for CV
         document.getElementById('cv_file').addEventListener('change', function(e) {
             const fileName = e.target.files[0]?.name;
             const fileNameDisplay = document.getElementById('cv_file_name');
             if (fileName) {
-                fileNameDisplay.textContent = `Seleccionado: ${fileName}`;
+                fileNameDisplay.querySelector('span').textContent = fileName;
                 fileNameDisplay.classList.remove('hidden');
             }
         });
 
-        document.getElementById('audio_file').addEventListener('change', function(e) {
-            const fileName = e.target.files[0]?.name;
-            const fileNameDisplay = document.getElementById('audio_file_name');
-            if (fileName) {
-                fileNameDisplay.textContent = `Seleccionado: ${fileName}`;
-                fileNameDisplay.classList.remove('hidden');
-            }
+        // Drag and drop visual feedback for CV only
+        const cvDropzone = document.getElementById('cv_dropzone');
+        
+        cvDropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            cvDropzone.classList.add('border-novo-primary', 'bg-indigo-50/50', 'scale-[1.02]');
+        });
+        
+        cvDropzone.addEventListener('dragleave', () => {
+            cvDropzone.classList.remove('border-novo-primary', 'bg-indigo-50/50', 'scale-[1.02]');
+        });
+        
+        cvDropzone.addEventListener('drop', () => {
+            cvDropzone.classList.remove('border-novo-primary', 'bg-indigo-50/50', 'scale-[1.02]');
         });
 
         // Handle form submission
@@ -131,8 +444,19 @@
             const loading = document.getElementById('loading');
             const message = document.getElementById('message');
             
+            // If we have recorded audio, add it to form data
+            if (recordedBlob) {
+                // Determine extension based on mime type
+                const ext = recordedBlob.type.includes('webm') ? 'webm' : 
+                           recordedBlob.type.includes('mp4') ? 'mp4' : 'ogg';
+                formData.set('audio_file', recordedBlob, `recording.${ext}`);
+                // Clear text since we're using audio
+                formData.delete('brain_dump_text');
+            }
+            
             // Show loading state
             submitBtn.disabled = true;
+            submitBtn.classList.add('hidden');
             loading.classList.remove('hidden');
             message.classList.add('hidden');
             
@@ -143,47 +467,45 @@
                     redirect: 'follow'
                 });
                 
-                // Check if response was redirected to /results
                 if (response.url && response.url.includes('/results')) {
                     window.location.href = '/results';
                     return;
                 }
                 
-                // If not redirected, check for JSON response (errors)
                 if (response.ok) {
                     const contentType = response.headers.get('content-type');
                     if (contentType && contentType.includes('application/json')) {
                         const data = await response.json();
-                        // If there's a result, redirect to results
                         if (data.result) {
                             window.location.href = '/results';
                             return;
                         }
-                        // Otherwise show success message
                         loading.classList.add('hidden');
+                        submitBtn.classList.remove('hidden');
                         submitBtn.disabled = false;
                         message.classList.remove('hidden');
-                        message.className = 'bg-green-100 border border-green-400 text-green-700 rounded-lg p-4';
-                        message.textContent = `Éxito: ${data.message || '¡Perfil analizado exitosamente!'}`;
+                        message.className = 'rounded-2xl p-5 bg-emerald-50 border border-emerald-200 text-emerald-700 flex items-center gap-3';
+                        message.innerHTML = `<svg class="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>${data.message || '¡Perfil analizado exitosamente!'}`;
                     } else {
-                        // Response is HTML (shouldn't happen, but redirect anyway)
                         window.location.href = '/results';
                         return;
                     }
                 } else {
                     const data = await response.json().catch(() => ({ error: 'Error desconocido' }));
                     loading.classList.add('hidden');
+                    submitBtn.classList.remove('hidden');
                     submitBtn.disabled = false;
                     message.classList.remove('hidden');
-                    message.className = 'bg-red-100 border border-red-400 text-red-700 rounded-lg p-4';
-                    message.textContent = `Error: ${data.error || 'Algo salió mal'}`;
+                    message.className = 'rounded-2xl p-5 bg-red-50 border border-red-200 text-red-700 flex items-center gap-3';
+                    message.innerHTML = `<svg class="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>${data.error || 'Algo salió mal'}`;
                 }
             } catch (error) {
                 loading.classList.add('hidden');
+                submitBtn.classList.remove('hidden');
                 submitBtn.disabled = false;
                 message.classList.remove('hidden');
-                message.className = 'bg-red-100 border border-red-400 text-red-700 rounded-lg p-4';
-                message.textContent = `Error: ${error.message}`;
+                message.className = 'rounded-2xl p-5 bg-red-50 border border-red-200 text-red-700 flex items-center gap-3';
+                message.innerHTML = `<svg class="w-6 h-6 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>${error.message}`;
             }
         });
     </script>

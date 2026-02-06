@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar Sesión - Novo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,85 +15,213 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #F8FAFC;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Animated background elements */
+        .bg-gradient {
+            position: fixed;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 30% 30%, rgba(79, 70, 229, 0.08) 0%, transparent 50%),
+                        radial-gradient(circle at 70% 70%, rgba(16, 185, 129, 0.06) 0%, transparent 50%);
+            animation: gradientMove 15s ease-in-out infinite;
+            z-index: 0;
+        }
+
+        @keyframes gradientMove {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            50% { transform: translate(-5%, -5%) rotate(5deg); }
+        }
+
+        .floating-shapes {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .shape {
+            position: absolute;
+            border-radius: 50%;
+            opacity: 0.4;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            top: -150px;
+            right: -100px;
+            animation-delay: 0s;
+        }
+
+        .shape-2 {
+            width: 200px;
+            height: 200px;
+            background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+            bottom: -100px;
+            left: -50px;
+            animation-delay: -5s;
+        }
+
+        .shape-3 {
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+            top: 50%;
+            right: 10%;
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-30px) rotate(10deg); }
         }
 
         .auth-container {
             background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 450px;
+            border-radius: 24px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 
+                        0 10px 15px -3px rgba(0, 0, 0, 0.05),
+                        0 20px 25px -5px rgba(0, 0, 0, 0.05);
+            max-width: 440px;
             width: 100%;
-            padding: 40px;
+            padding: 48px;
+            position: relative;
+            z-index: 1;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .logo {
             text-align: center;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
+        }
+
+        .logo-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            font-size: 28px;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
         }
 
         .logo h1 {
-            color: #667eea;
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 10px;
+            color: #1E293B;
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 8px;
+            letter-spacing: -0.02em;
         }
 
         .logo p {
-            color: #666;
+            color: #64748B;
             font-size: 0.95rem;
+            font-weight: 500;
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 24px;
         }
 
         .form-group label {
             display: block;
-            color: #333;
-            font-weight: 500;
+            color: #1E293B;
+            font-weight: 600;
             margin-bottom: 8px;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
         }
 
         .form-group input {
             width: 100%;
-            padding: 12px 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
+            padding: 14px 16px;
+            border: 2px solid #E2E8F0;
+            border-radius: 12px;
             font-size: 1rem;
+            font-family: 'Inter', sans-serif;
             transition: all 0.3s ease;
+            background: #F8FAFC;
         }
 
         .form-group input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #4F46E5;
+            background: white;
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #94A3B8;
         }
 
         .btn-primary {
             width: 100%;
-            padding: 14px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px;
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
             color: white;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             font-size: 1rem;
             font-weight: 600;
+            font-family: 'Inter', sans-serif;
             cursor: pointer;
             transition: all 0.3s ease;
-            margin-top: 10px;
+            margin-top: 8px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s ease;
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 10px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        .btn-primary:hover::before {
+            left: 100%;
         }
 
         .btn-primary:active {
@@ -98,157 +229,138 @@
         }
 
         .alert {
-            padding: 12px 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
+            padding: 14px 16px;
+            border-radius: 12px;
+            margin-bottom: 24px;
             font-size: 0.9rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
         }
 
         .alert-error {
-            background-color: #fee;
-            color: #c33;
-            border: 1px solid #fcc;
+            background: #FEF2F2;
+            color: #DC2626;
+            border: 1px solid #FECACA;
         }
 
         .alert-success {
-            background-color: #efe;
-            color: #3c3;
-            border: 1px solid #cfc;
+            background: #ECFDF5;
+            color: #059669;
+            border: 1px solid #A7F3D0;
         }
 
         .divider {
-            text-align: center;
-            margin: 25px 0;
-            position: relative;
+            display: flex;
+            align-items: center;
+            margin: 32px 0;
         }
 
-        .divider::before {
+        .divider::before,
+        .divider::after {
             content: '';
-            position: absolute;
-            top: 50%;
-            left: 0;
-            right: 0;
+            flex: 1;
             height: 1px;
-            background: #e0e0e0;
+            background: #E2E8F0;
         }
 
         .divider span {
-            background: white;
-            padding: 0 15px;
-            position: relative;
-            color: #999;
-            font-size: 0.9rem;
-        }
-
-        .auth-link {
-            text-align: center;
-            margin-top: 20px;
-            color: #666;
-            font-size: 0.95rem;
-        }
-
-        .auth-link a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 600;
-        }
-
-        .auth-link a:hover {
-            text-decoration: underline;
-        }
-        <!-- filepath: /mnt/c/CODING PROJECTS/University_Opportunities/templates/login.html -->
-        .logo h1 {
-            color: #667eea;
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .slogan-container {
-            margin: 15px 0 20px 0;
-            padding: 15px 20px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.08) 100%);
-            border-radius: 12px;
-            border-left: 4px solid #667eea;
-        }
-
-        .slogan-main {
-            font-size: 1.15rem;
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 4px;
-            line-height: 1.4;
-        }
-
-        .slogan-main .highlight {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            font-weight: 700;
-            font-size: 1.2rem;
-        }
-
-        .slogan-sub {
-            font-size: 0.95rem;
-            color: #666;
+            padding: 0 16px;
+            color: #94A3B8;
+            font-size: 0.85rem;
             font-weight: 500;
         }
 
-        .login-subtitle {
-            color: #888;
-            font-size: 0.9rem;
-            margin-top: 10px;
+        .auth-footer {
+            text-align: center;
+            margin-top: 32px;
         }
 
+        .auth-footer p {
+            color: #64748B;
+            font-size: 0.95rem;
+        }
+
+        .auth-footer a {
+            color: #4F46E5;
+            text-decoration: none;
+            font-weight: 600;
+            transition: color 0.2s ease;
+        }
+
+        .auth-footer a:hover {
+            color: #7C3AED;
+        }
+
+        /* Social proof */
+        .social-proof {
+            text-align: center;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #E2E8F0;
+        }
+
+        .social-proof p {
+            color: #64748B;
+            font-size: 0.8rem;
+        }
+
+        .social-proof span {
+            color: #10B981;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
+    <div class="bg-gradient"></div>
+    <div class="floating-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+        <div class="shape shape-3"></div>
+    </div>
+
     <div class="auth-container">
         <div class="logo">
-            <h1>🎓 Novo</h1>
-            <div class="slogan-container">
-                <p class="slogan-main">Tu <span class="highlight">AI Finder</span></p>
-                <p class="slogan-sub">de Oportunidades Universitarias</p>
-            </div>
-            <p class="login-subtitle">Inicia sesión para continuar</p>
+            <div class="logo-icon">🧭</div>
+            <h1>Novo</h1>
+            <p>Tu brújula de oportunidades globales</p>
         </div>
 
         {% if error %}
         <div class="alert alert-error">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+            </svg>
             {{ error }}
         </div>
         {% endif %}
 
         {% if success %}
         <div class="alert alert-success">
+            <svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+            </svg>
             {{ success }}
         </div>
         {% endif %}
 
         <form method="POST" action="{{ url_for('login') }}">
             <div class="form-group">
-                <label for="email">Correo Electrónico</label>
-                <input 
-                    type="email" 
-                    id="email" 
-                    name="email" 
-                    required 
-                    placeholder="tu@email.com"
-                    autofocus
-                >
+                <label for="email">Correo electrónico</label>
+                <input type="email" id="email" name="email" placeholder="tu@email.com" required>
             </div>
 
             <div class="form-group">
                 <label for="password">Contraseña</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    name="password" 
-                    required 
-                    placeholder="••••••••"
-                    minlength="6"
-                >
+                <input type="password" id="password" name="password" placeholder="••••••••" required>
             </div>
 
             <button type="submit" class="btn-primary">
@@ -256,12 +368,12 @@
             </button>
         </form>
 
-        <div class="divider">
-            <span>o</span>
+        <div class="auth-footer">
+            <p>¿No tienes cuenta? <a href="{{ url_for('register') }}">Regístrate gratis</a></p>
         </div>
 
-        <div class="auth-link">
-            ¿No tienes cuenta? <a href="{{ url_for('register') }}">Regístrate aquí</a>
+        <div class="social-proof">
+            <p>🎓 <span>+500 estudiantes</span> ya encontraron oportunidades con Novo</p>
         </div>
     </div>
 </body>

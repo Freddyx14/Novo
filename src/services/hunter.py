@@ -16,60 +16,101 @@ supabase: Client = create_client(
 
 # Inside src/services/hunter.py
 
-def search_opportunities_with_perplexity(profile_data):
+def search_opportunities_with_perplexity(profile_data, num_results=3):
     """
     Uses Perplexity to find real opportunities (internships, fellowships, programs, research positions, etc.) based on profile.
     """
     print("🔎 Asking Perplexity to search for opportunities...")
     
-    # Extract the most important data: ambitions, goals, and summary
-    ambitions = profile_data.get('ambitions', '')
-    career_goals = profile_data.get('career_goals', '')
-    summary = profile_data.get('summary', '')
+    # Extract enriched profile data
+    name = profile_data.get('name', 'Estudiante')
+    university = profile_data.get('university', '')
+    career = profile_data.get('career', '')
+    study_level = profile_data.get('study_level', 'pregrado')
+    country = profile_data.get('country', 'Latinoamérica')
+    languages = profile_data.get('languages', ['Español'])
+    skills = profile_data.get('top_skills', [])
     interests = profile_data.get('interests', [])
+    ambitions = profile_data.get('ambitions', '')
+    preferred_types = profile_data.get('preferred_opportunity_types', ['becas', 'pasantías'])
+    availability = profile_data.get('availability', 'flexible')
     
-    # Skills are secondary - only use if ambitions are missing
-    skills = profile_data.get('top_skills', ['General Tech'])
+    # Build comprehensive student context
+    student_context = f"Estudiante de {career if career else 'universidad'}" if career else "Estudiante universitario"
+    if study_level:
+        student_context += f" ({study_level})"
+    if country and country != 'No especificado':
+        student_context += f" en {country}"
     
-    # Build a query focused on what the student WANTS, not just what they know
-    if ambitions or career_goals or summary:
-        # Prioritize their goals and ambitions
-        goal_text = f"{ambitions} {career_goals} {summary}".strip()
-        interest_text = " ".join(interests[:3]) if interests else ""
-        search_query = f"{goal_text} {interest_text} oportunidades becas programas investigación pasantías estudiantes 2026"
-    else:
-        # Fallback to skills if no ambitions are provided
-        search_query = f"{skills[0]} oportunidades becas programas investigación pasantías estudiantes 2026"
+    # Build interests and skills string
+    interest_text = ", ".join(interests[:4]) if interests else ""
+    skills_text = ", ".join(skills[:3]) if skills else ""
+    preferred_types_text = ", ".join(preferred_types[:3]) if preferred_types else "becas, pasantías"
+    languages_text = ", ".join(languages[:2]) if languages else "Español"
+    
+    # Build rich search query
+    search_parts = []
+    if ambitions:
+        search_parts.append(f"Ambiciones: {ambitions}")
+    if interest_text:
+        search_parts.append(f"Intereses: {interest_text}")
+    if skills_text:
+        search_parts.append(f"Habilidades: {skills_text}")
+    
+    search_query = f"{student_context}. {' '.join(search_parts)}. Busca: {preferred_types_text}. Idiomas: {languages_text}."
     
     url = "https://api.perplexity.ai/chat/completions"
+    
+    # Build detailed system prompt with student context
+    system_prompt = f"""Eres un buscador experto de oportunidades educativas y profesionales para estudiantes universitarios.
+
+PERFIL DEL ESTUDIANTE:
+- Contexto: {student_context}
+- Carrera: {career if career else 'No especificada'}
+- Nivel: {study_level}
+- País: {country}
+- Idiomas: {languages_text}
+- Habilidades: {skills_text if skills_text else 'No especificadas'}
+- Intereses: {interest_text if interest_text else 'No especificados'}
+- Ambiciones: {ambitions if ambitions else 'No especificadas'}
+- Tipos de oportunidades preferidas: {preferred_types_text}
+- Disponibilidad: {availability}
+
+TU TAREA:
+1. Busca {num_results} oportunidades REALES, ACTUALES y VERIFICABLES que existan en 2025-2026
+2. Prioriza oportunidades que:
+   - Sean ELEGIBLES para el nivel de estudios del estudiante ({study_level})
+   - Estén disponibles para estudiantes de {country} o sean internacionales
+   - Coincidan con sus intereses y carrera
+   - Se alineen con sus ambiciones profesionales
+3. Incluye variedad: becas, pasantías, programas de investigación, intercambios, concursos, etc.
+4. SOLO incluye oportunidades con requisitos que el estudiante PODRÍA cumplir
+
+FORMATO DE RESPUESTA:
+Devuelve SOLO un array JSON válido, sin texto adicional:
+[
+  {{
+    "title": "Nombre exacto del programa/beca",
+    "company": "Organización que lo ofrece",
+    "location": "País/Ciudad o Remoto",
+    "url": "URL oficial verificable",
+    "description": "Descripción breve en español",
+    "opportunity_type": "beca|pasantía|investigación|intercambio|concurso|voluntariado",
+    "eligibility_level": "pregrado|maestría|doctorado|todos",
+    "deadline_info": "Información sobre fechas límite si está disponible"
+  }}
+]"""
     
     payload = {
         "model": "sonar-pro",
         "messages": [
             {
                 "role": "system",
-                "content": (
-                    "Eres un extractor de datos estructurados. Tu ÚNICA tarea es buscar 3 oportunidades REALES Y ESPECÍFICAS para estudiantes universitarios "
-                    "(pasantías, becas, programas de investigación, intercambios, concursos, etc.) que se alineen con sus OBJETIVOS PROFESIONALES y AMBICIONES. \n"
-                    "Céntrate en encontrar oportunidades que coincidan con lo que el estudiante QUIERE LOGRAR y sus ASPIRACIONES, no solo sus habilidades técnicas actuales. "
-                    "Busca oportunidades que les ayuden a alcanzar sus metas, explorar sus intereses y alinearse con su visión de carrera. \n\n"
-                    "Debes devolver SOLO un objeto JSON sin procesar. No escribas texto introductorio. \n"
-                    "El contenido de los campos (title, company, description, etc.) DEBE estar en ESPAÑOL.\n"
-                    "Usa este esquema exacto:\n"
-                    "[\n"
-                    "  {\n"
-                    "    \"title\": \"Título de la Oportunidad Aquí\",\n"
-                    "    \"company\": \"Nombre de la Organización/Institución\",\n"
-                    "    \"location\": \"Ciudad, País o Remoto\",\n"
-                    "    \"url\": \"https://link-to-opportunity.com\",\n"
-                    "    \"description\": \"Una frase corta sobre la oportunidad en Español.\"\n"
-                    "  }\n"
-                    "]"
-                )
+                "content": system_prompt
             },
             {
                 "role": "user",
-                "content": f"Busca 3 oportunidades actuales para estudiantes universitarios basadas en sus metas y ambiciones: {search_query}"
+                "content": f"Encuentra {num_results} oportunidades específicas y actuales para este estudiante. Prioriza calidad sobre cantidad y asegúrate de que sean elegibles para su perfil."
             }
         ]
     }
@@ -101,15 +142,45 @@ def search_opportunities_with_perplexity(profile_data):
 def evaluate_match(student_profile, opportunity):
     """
     Uses Gemini to evaluate how well a student profile matches an opportunity.
-    Returns a dict with 'score' (0-100) and 'reason' (string).
+    Returns a dict with 'score' (0-100), 'reason' (string), and 'is_eligible' (boolean).
+    Uses weighted criteria for more accurate scoring.
     """
-    prompt = f"""Actúa como un asesor académico y de carrera. Compara este Perfil de Estudiante: {json.dumps(student_profile)} con esta Oportunidad (que podría ser una pasantía, beca, programa de investigación, intercambio o concurso): {json.dumps(opportunity)}. 
+    # Extract student context for better evaluation
+    study_level = student_profile.get('study_level', 'pregrado')
+    country = student_profile.get('country', 'No especificado')
+    career = student_profile.get('career', 'No especificada')
     
-    Devuelve un JSON exacto con los siguientes campos:
-    - 'score': (integer 0-100)
-    - 'description': (string, una descripción breve de 1 o 2 frases sobre de qué trata el programa, en Español)
-    - 'reason': (string, explicación breve de por qué hace match con el perfil del estudiante, en Español)
-    """
+    prompt = f"""Eres un asesor académico experto. Evalúa si este estudiante es un BUEN CANDIDATO para esta oportunidad.
+
+PERFIL DEL ESTUDIANTE:
+{json.dumps(student_profile, ensure_ascii=False, indent=2)}
+
+OPORTUNIDAD:
+{json.dumps(opportunity, ensure_ascii=False, indent=2)}
+
+EVALÚA CON ESTOS CRITERIOS PONDERADOS:
+1. ELEGIBILIDAD (40%): ¿El estudiante cumple los requisitos básicos?
+   - ¿Su nivel de estudios ({study_level}) es compatible con la oportunidad?
+   - ¿Su país ({country}) es elegible o la oportunidad es internacional?
+   - ¿Su carrera ({career}) es relevante para la oportunidad?
+   
+2. ALINEACIÓN DE INTERESES (30%): ¿Los intereses y ambiciones del estudiante coinciden con el enfoque de la oportunidad?
+
+3. HABILIDADES (20%): ¿Las habilidades del estudiante son relevantes para la oportunidad?
+
+4. POTENCIAL DE IMPACTO (10%): ¿Esta oportunidad ayudaría significativamente al desarrollo profesional del estudiante?
+
+IMPORTANTE:
+- Si el estudiante NO ES ELEGIBLE por nivel de estudios o país, el score debe ser menor a 50
+- Solo da scores altos (70+) si hay una alineación clara y el estudiante es elegible
+
+Devuelve un JSON con:
+- 'is_eligible': (boolean) ¿El estudiante cumple los requisitos básicos para aplicar?
+- 'score': (integer 0-100) Puntuación ponderada según los criterios anteriores
+- 'description': (string) Descripción breve de 1-2 frases sobre el programa
+- 'reason': (string) Explicación de por qué es o no es un buen match
+- 'eligibility_notes': (string) Notas sobre requisitos que podría o no cumplir
+"""
     
     try:
         response = gemini_model.generate_content(prompt)
@@ -126,29 +197,34 @@ def evaluate_match(student_profile, opportunity):
         
         # Validate the response has required fields
         if 'score' not in result:
-            return {"score": 0, "reason": "Invalid response format from AI", "description": ""}
+            return {"score": 0, "reason": "Invalid response format from AI", "description": "", "is_eligible": False}
         
         # Ensure score is an integer between 0 and 100
         score = int(result['score'])
         score = max(0, min(100, score))
         
+        # Get eligibility status (default to True for backwards compatibility)
+        is_eligible = result.get('is_eligible', True)
+        
         return {
             "score": score,
+            "is_eligible": is_eligible,
             "description": result.get('description', ''),
-            "reason": result.get('reason', '')
+            "reason": result.get('reason', ''),
+            "eligibility_notes": result.get('eligibility_notes', '')
         }
     
     except json.JSONDecodeError as e:
         print(f"JSON parsing error: {e}")
         print(f"Raw response: {response_text if 'response_text' in locals() else 'No response'}")
-        return {"score": 0, "reason": "Failed to parse AI response", "description": ""}
+        return {"score": 0, "reason": "Failed to parse AI response", "description": "", "is_eligible": False}
     
     except Exception as e:
         print(f"Error evaluating match: {e}")
-        return {"score": 0, "reason": "Error during evaluation", "description": ""}
+        return {"score": 0, "reason": "Error during evaluation", "description": "", "is_eligible": False}
 
 
-def find_and_save_matches(student_id):
+def find_and_save_matches(student_id, num_results=3):
     """
     Main logic: Fetches student, gets opportunities, scores them, and saves matches.
     """
@@ -178,7 +254,7 @@ def find_and_save_matches(student_id):
 
         # 3. Search using the Dictionary (Fixes the error!)
         # We pass the full profile_data dict so the function can find 'top_skills'
-        opportunities = search_opportunities_with_perplexity(profile_data)
+        opportunities = search_opportunities_with_perplexity(profile_data, num_results=num_results)
         
         print(f"Found {len(opportunities)} opportunities to evaluate")
         
@@ -194,18 +270,34 @@ def find_and_save_matches(student_id):
             title = opportunity.get('title', 'Unknown Position')
             print(f"\nEvaluating: {title}")
             
-            # Score with Gemini
+            # Score with Gemini (now includes eligibility check)
             evaluation = evaluate_match(profile_data, opportunity)
             score = evaluation['score']
             reason = evaluation['reason']
             description = evaluation.get('description', '')
+            is_eligible = evaluation.get('is_eligible', True)
+            eligibility_notes = evaluation.get('eligibility_notes', '')
             
-            print(f"Score: {score}/100 - {reason}")
+            # Get additional opportunity metadata if available
+            opportunity_type = opportunity.get('opportunity_type', 'oportunidad')
+            deadline_info = opportunity.get('deadline_info', '')
             
-            if score > 70:
+            print(f"Score: {score}/100 | Eligible: {is_eligible} - {reason}")
+            
+            # New threshold: Must be eligible AND score >= 50 (more inclusive but accurate)
+            if is_eligible and score >= 50:
                 try:
-                    # Combine description and reason to show both in the existing match_reason column
-                    full_reason = f"{description}\n\n💡 Match: {reason}"
+                    # Build rich match reason with all available info
+                    full_reason_parts = []
+                    if description:
+                        full_reason_parts.append(description)
+                    if deadline_info:
+                        full_reason_parts.append(f"📅 {deadline_info}")
+                    full_reason_parts.append(f"💡 Match: {reason}")
+                    if eligibility_notes:
+                        full_reason_parts.append(f"✅ Elegibilidad: {eligibility_notes}")
+                    
+                    full_reason = "\n\n".join(full_reason_parts)
 
                     match_data = {
                         "student_id": student_id,
@@ -223,6 +315,9 @@ def find_and_save_matches(student_id):
                 
                 except Exception as e:
                     print(f"Error saving match: {e}")
+            else:
+                skip_reason = "Not eligible" if not is_eligible else f"Score too low ({score}/100)"
+                print(f"⊘ Skipped: {skip_reason}")
         
         print(f"\n{'='*50}")
         print(f"Summary: {matches_saved} matches saved out of {len(opportunities)} opportunities")

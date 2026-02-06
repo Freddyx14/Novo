@@ -1,0 +1,253 @@
+<!-- Novo Design System - Base Styles -->
+<!-- Include this in all templates for consistent branding -->
+
+<!-- Google Fonts - Inter -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Tailwind Config with Novo Brand Colors -->
+<script>
+tailwind.config = {
+    theme: {
+        extend: {
+            colors: {
+                'novo-primary': '#4F46E5',
+                'novo-primary-dark': '#4338CA',
+                'novo-bg': '#F8FAFC',
+                'novo-success': '#10B981',
+                'novo-success-dark': '#059669',
+                'novo-text': '#1E293B',
+                'novo-text-light': '#64748B',
+            },
+            fontFamily: {
+                'sans': ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            },
+            animation: {
+                'float': 'float 6s ease-in-out infinite',
+                'pulse-slow': 'pulse 3s ease-in-out infinite',
+                'slide-up': 'slideUp 0.6s ease-out',
+                'fade-in': 'fadeIn 0.5s ease-out',
+                'bounce-subtle': 'bounceSubtle 2s infinite',
+            },
+            keyframes: {
+                float: {
+                    '0%, 100%': { transform: 'translateY(0px)' },
+                    '50%': { transform: 'translateY(-10px)' },
+                },
+                slideUp: {
+                    '0%': { opacity: '0', transform: 'translateY(20px)' },
+                    '100%': { opacity: '1', transform: 'translateY(0)' },
+                },
+                fadeIn: {
+                    '0%': { opacity: '0' },
+                    '100%': { opacity: '1' },
+                },
+                bounceSubtle: {
+                    '0%, 100%': { transform: 'translateY(0)' },
+                    '50%': { transform: 'translateY(-5px)' },
+                },
+            },
+        },
+    },
+}
+</script>
+
+<!-- Global Novo Styles -->
+<style>
+    /* Base styles */
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        background: #F8FAFC;
+        color: #1E293B;
+    }
+
+    /* Smooth scrolling */
+    html {
+        scroll-behavior: smooth;
+    }
+
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #F1F5F9;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #CBD5E1;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #94A3B8;
+    }
+
+    /* Novo Button Styles */
+    .novo-btn {
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+
+    .novo-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s ease;
+    }
+
+    .novo-btn:hover::before {
+        left: 100%;
+    }
+
+    .novo-btn:hover {
+        transform: translateY(-2px);
+    }
+
+    .novo-btn:active {
+        transform: translateY(0);
+    }
+
+    /* Card hover effects */
+    .novo-card {
+        transition: all 0.3s ease;
+    }
+
+    .novo-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    }
+
+    /* Gradient text */
+    .novo-gradient-text {
+        background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    /* Glass effect */
+    .novo-glass {
+        background: rgba(255, 255, 255, 0.9);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+
+    /* Loading spinner */
+    .novo-spinner {
+        border: 3px solid #E2E8F0;
+        border-top: 3px solid #4F46E5;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Pill badges */
+    .novo-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+
+    .novo-pill:hover {
+        transform: scale(1.05);
+    }
+
+    /* Social proof animation */
+    .social-proof-counter {
+        display: inline-block;
+        animation: countUp 2s ease-out forwards;
+    }
+
+    /* Input focus ring */
+    .novo-input:focus {
+        outline: none;
+        border-color: #4F46E5;
+        box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+    }
+
+    /* Navbar blur effect */
+    .novo-navbar {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+
+    /* Staggered animation for lists */
+    .stagger-item {
+        opacity: 0;
+        animation: fadeIn 0.5s ease-out forwards;
+    }
+
+    .stagger-item:nth-child(1) { animation-delay: 0.1s; }
+    .stagger-item:nth-child(2) { animation-delay: 0.2s; }
+    .stagger-item:nth-child(3) { animation-delay: 0.3s; }
+    .stagger-item:nth-child(4) { animation-delay: 0.4s; }
+    .stagger-item:nth-child(5) { animation-delay: 0.5s; }
+    .stagger-item:nth-child(6) { animation-delay: 0.6s; }
+
+    /* Urgency badge pulse */
+    .urgency-badge {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+
+    /* Audio wave animation for recording */
+    .audio-wave-bar {
+        animation: audioWave 1s ease-in-out infinite;
+    }
+
+    @keyframes audioWave {
+        0%, 100% {
+            transform: scaleY(0.5);
+            opacity: 0.5;
+        }
+        50% {
+            transform: scaleY(1);
+            opacity: 1;
+        }
+    }
+
+    .audio-wave-bar:nth-child(1) { animation-delay: 0ms; }
+    .audio-wave-bar:nth-child(2) { animation-delay: 100ms; }
+    .audio-wave-bar:nth-child(3) { animation-delay: 200ms; }
+    .audio-wave-bar:nth-child(4) { animation-delay: 300ms; }
+    .audio-wave-bar:nth-child(5) { animation-delay: 400ms; }
+    .audio-wave-bar:nth-child(6) { animation-delay: 500ms; }
+    .audio-wave-bar:nth-child(7) { animation-delay: 600ms; }
+    .audio-wave-bar:nth-child(8) { animation-delay: 700ms; }
+    .audio-wave-bar:nth-child(9) { animation-delay: 800ms; }
+
+    /* Recording pulse glow */
+    .recording-pulse {
+        animation: recordingPulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes recordingPulse {
+        0%, 100% {
+            box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+        }
+        50% {
+            box-shadow: 0 0 0 15px rgba(239, 68, 68, 0);
+        }
+    }
+</style>

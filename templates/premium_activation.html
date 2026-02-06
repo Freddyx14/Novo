@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novo - Activando Premium</title>
+    {% include 'base_styles.html' %}
+    <style>
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background: linear-gradient(135deg, #4F46E5, #10B981);
+            border-radius: 2px;
+            animation: confetti-fall 3s ease-out forwards;
+        }
+        
+        @keyframes confetti-fall {
+            0% {
+                opacity: 1;
+                transform: translateY(-100vh) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(100vh) rotate(720deg);
+            }
+        }
+        
+        .pulse-ring {
+            animation: pulse-ring 2s cubic-bezier(0.455, 0.03, 0.515, 0.955) infinite;
+        }
+        
+        @keyframes pulse-ring {
+            0% {
+                transform: scale(0.95);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.05);
+                opacity: 0.8;
+            }
+            100% {
+                transform: scale(0.95);
+                opacity: 1;
+            }
+        }
+        
+        .checkmark {
+            stroke-dasharray: 100;
+            stroke-dashoffset: 100;
+            animation: checkmark-draw 0.8s ease forwards 0.5s;
+        }
+        
+        @keyframes checkmark-draw {
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+        
+        .feature-item {
+            opacity: 0;
+            transform: translateX(-20px);
+            animation: slide-in 0.5s ease forwards;
+        }
+        
+        @keyframes slide-in {
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-novo-bg min-h-screen">
+    <!-- Confetti Container -->
+    <div id="confetti-container" class="fixed inset-0 pointer-events-none z-50 overflow-hidden"></div>
+
+    <!-- Floating Background Elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-emerald-200/40 to-teal-200/40 rounded-full blur-3xl animate-float"></div>
+        <div class="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-indigo-200/30 to-purple-200/30 rounded-full blur-3xl animate-float" style="animation-delay: -3s;"></div>
+        <div class="absolute top-1/2 left-1/2 w-72 h-72 bg-gradient-to-br from-amber-200/20 to-yellow-200/20 rounded-full blur-3xl animate-float" style="animation-delay: -5s;"></div>
+    </div>
+
+    <div class="relative z-10 min-h-screen flex items-center justify-center px-6 py-12">
+        <div class="max-w-lg w-full">
+            <!-- Success Card -->
+            <div class="novo-card bg-white rounded-3xl shadow-2xl shadow-emerald-200/50 overflow-hidden animate-slide-up">
+                <!-- Header with animation -->
+                <div class="bg-gradient-to-r from-novo-success via-emerald-500 to-teal-500 px-8 py-12 text-center relative overflow-hidden">
+                    <!-- Animated circles in background -->
+                    <div class="absolute inset-0 opacity-20">
+                        <div class="absolute top-4 left-8 w-16 h-16 border-2 border-white rounded-full animate-ping"></div>
+                        <div class="absolute bottom-4 right-8 w-20 h-20 border-2 border-white rounded-full animate-ping" style="animation-delay: 0.5s;"></div>
+                    </div>
+                    
+                    <!-- Success Icon with animation -->
+                    <div class="relative inline-flex items-center justify-center mb-6">
+                        <div class="w-28 h-28 bg-white/20 backdrop-blur-sm rounded-full pulse-ring flex items-center justify-center">
+                            <div class="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-lg">
+                                <svg class="w-10 h-10 text-novo-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path class="checkmark" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h1 class="text-3xl font-bold text-white mb-2">¡Pago Exitoso!</h1>
+                    <p class="text-emerald-100 text-lg">Bienvenido a Novo Pro</p>
+                </div>
+
+                <!-- Content -->
+                <div class="p-8">
+                    <!-- Activation Status -->
+                    <div class="text-center mb-8">
+                        <div class="inline-flex items-center gap-3 bg-emerald-50 text-novo-success px-5 py-3 rounded-full mb-4">
+                            <div class="novo-spinner w-5 h-5 border-2 border-emerald-200 border-t-emerald-500"></div>
+                            <span class="font-semibold">Activando funciones Pro...</span>
+                        </div>
+                        <p class="text-novo-text-light">
+                            Estamos configurando tu cuenta premium. Revisa tu correo <strong class="text-novo-text">{{ email }}</strong> para confirmación.
+                        </p>
+                    </div>
+
+                    <!-- Premium Features -->
+                    <div class="space-y-4 mb-8">
+                        <h3 class="text-sm font-bold text-novo-text-light uppercase tracking-wider mb-4">Lo que incluye tu plan:</h3>
+                        
+                        <div class="feature-item flex items-center gap-4 p-4 bg-gradient-to-r from-emerald-50/50 to-teal-50/50 rounded-xl border border-emerald-100/50" style="animation-delay: 0.5s;">
+                            <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-novo-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-novo-text">Búsquedas sin límites</p>
+                                <p class="text-sm text-novo-text-light">Explora el mercado global las veces que quieras</p>
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item flex items-center gap-4 p-4 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 rounded-xl border border-indigo-100/50" style="animation-delay: 0.7s;">
+                            <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-novo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-novo-text">Aplicaciones perfectas</p>
+                                <p class="text-sm text-novo-text-light">Optimiza tu CV y cartas con IA especializada</p>
+                            </div>
+                        </div>
+                        
+                        <div class="feature-item flex items-center gap-4 p-4 bg-gradient-to-r from-amber-50/50 to-orange-50/50 rounded-xl border border-amber-100/50" style="animation-delay: 0.9s;">
+                            <div class="w-10 h-10 bg-amber-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                                <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="font-semibold text-novo-text">Banco de oportunidades</p>
+                                <p class="text-sm text-novo-text-light">Accede a la base de datos de mayor prestigio</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CTA Button -->
+                    <a href="{{ url_for('profile') }}" 
+                       class="novo-btn block w-full text-center py-4 px-6 bg-gradient-to-r from-novo-primary to-indigo-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-indigo-200 hover:shadow-xl">
+                        <span class="flex items-center justify-center gap-2">
+                            🚀 Comenzar a Buscar Oportunidades
+                        </span>
+                    </a>
+                    
+                    <!-- Help text -->
+                    <p class="text-center text-novo-text-light text-sm mt-4">
+                        ¿Necesitas ayuda? <a href="mailto:soporte@novo.pe" class="text-novo-primary hover:underline">Contáctanos</a>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Social Proof -->
+            <div class="mt-8 text-center animate-fade-in" style="animation-delay: 1s;">
+                <div class="inline-flex items-center gap-4 bg-white/80 backdrop-blur-sm rounded-full px-6 py-3 shadow-lg">
+                    <div class="flex -space-x-2">
+                        <img src="{{ url_for('static', filename='images/users/user-1.jpg') }}" alt="Usuario Novo" class="w-8 h-8 rounded-full border-2 border-white object-cover">
+                        <img src="{{ url_for('static', filename='images/users/user-2.jpg') }}" alt="Usuario Novo" class="w-8 h-8 rounded-full border-2 border-white object-cover">
+                        <img src="{{ url_for('static', filename='images/users/user-3.jpg') }}" alt="Usuario Novo" class="w-8 h-8 rounded-full border-2 border-white object-cover">
+                    </div>
+                    <p class="text-novo-text-light text-sm">
+                        🎉 Te uniste a <span class="font-semibold text-novo-text">500+ estudiantes Pro</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Create confetti effect
+        function createConfetti() {
+            const container = document.getElementById('confetti-container');
+            const colors = ['#4F46E5', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6'];
+            
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.width = (Math.random() * 10 + 5) + 'px';
+                    confetti.style.height = (Math.random() * 10 + 5) + 'px';
+                    confetti.style.animationDuration = (Math.random() * 2 + 2) + 's';
+                    container.appendChild(confetti);
+                    
+                    setTimeout(() => confetti.remove(), 4000);
+                }, i * 50);
+            }
+        }
+        
+        window.addEventListener('load', () => {
+            setTimeout(createConfetti, 500);
+        });
+    </script>
+</body>
+</html>

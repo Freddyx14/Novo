@@ -5,8 +5,10 @@ Route handlers for Novo application
 from flask import request, render_template, jsonify, redirect, url_for, current_app, session, flash
 from werkzeug.utils import secure_filename
 import os
+import stripe
+from datetime import datetime, timezone
 from src.services.hunter import find_and_save_matches
-from src.services.db import _get_supabase_client
+from src.services.db import _get_supabase_client, set_student_premium, is_user_premium
 from src.services.auth import (
     register_user, 
     login_user, 
@@ -15,6 +17,10 @@ from src.services.auth import (
     is_authenticated,
     get_current_user
 )
+
+# Stripe Configuration
+stripe.api_key = os.getenv('STRIPE_SECRET_KEY')
+STRIPE_PRICE_ID = os.getenv('STRIPE_PRICE_ID')
 
 ALLOWED_EXTENSIONS = {
     'pdf': {'pdf'},
@@ -113,8 +119,9 @@ def init_routes(app):
         
         user = get_current_user()
         profiles = get_student_profiles_by_user(user['id'])
+        is_premium = is_user_premium(user['id'])
         
-        return render_template('my_profiles.html', profiles=profiles, user=user)
+        return render_template('my_profiles.html', profiles=profiles, user=user, is_premium=is_premium)
     
     @app.route('/profile', methods=['GET'])
     @login_required
@@ -123,10 +130,14 @@ def init_routes(app):
         from src.services.db import get_latest_student_profile_by_user
         
         user = get_current_user()
-        # Obtener el último perfil del usuario si existe
+        is_premium = is_user_premium(user['id'])
+        # Check if the user has an existing profile
         latest_profile = get_latest_student_profile_by_user(user['id'])
         
-        return render_template('profile.html', user=user, latest_profile=latest_profile)
+        if latest_profile:
+            return render_template('profile_view.html', user=user, latest_profile=latest_profile, is_premium=is_premium)
+            
+        return render_template('profile.html', user=user, is_premium=is_premium)
     
     @app.route('/profile', methods=['POST'])
     @login_required
@@ -160,22 +171,29 @@ def init_routes(app):
             
             cv_filename = secure_filename(cv_file.filename)
             
-            # Handle optional audio file
+            # Handle brain dump - either text OR recorded audio (mutually exclusive)
+            brain_dump_text = request.form.get('brain_dump_text', '').strip()
             audio_file = request.files.get('audio_file')
             
+            # Check if we have recorded audio (from microphone)
             if audio_file and audio_file.filename != '':
-                # Validate audio file type
-                if not allowed_file(audio_file.filename, 'audio'):
-                    # Clean up CV temp file
-                    if cv_path and os.path.exists(cv_path):
-                        os.unlink(cv_path)
-                    return jsonify({'error': 'Audio must be mp3, wav, m4a, or ogg'}), 400
+                # Get content type to determine extension
+                content_type = audio_file.content_type or 'audio/webm'
+                ext_map = {
+                    'audio/webm': '.webm',
+                    'audio/mp4': '.mp4',
+                    'audio/mpeg': '.mp3',
+                    'audio/wav': '.wav',
+                    'audio/ogg': '.ogg',
+                    'audio/x-m4a': '.m4a'
+                }
+                audio_ext = ext_map.get(content_type, '.webm')
                 
-                # Get audio extension
-                audio_ext = os.path.splitext(audio_file.filename)[1]
                 audio_fd, audio_path = tempfile.mkstemp(suffix=audio_ext)
                 os.close(audio_fd)
                 audio_file.save(audio_path)
+                # Clear text since audio takes precedence
+                brain_dump_text = None
             
             # Import and call AI agent analyzer
             from src.services.ai_agent import analyze_profile
@@ -184,8 +202,8 @@ def init_routes(app):
             # Get current user
             user = get_current_user()
             
-            # Analyze profile
-            result = analyze_profile(cv_path, audio_path)
+            # Analyze profile with either audio or text brain dump
+            result = analyze_profile(cv_path, audio_path, brain_dump_text)
             
             # Clean up temporary files immediately after processing
             try:
@@ -230,6 +248,7 @@ def init_routes(app):
             return redirect(url_for('profile'))
         
         user = get_current_user()
+        is_premium = is_user_premium(user['id'])
         
         # Verificar que el student_row pertenece al usuario actual
         if student_row and student_row.get('user_id') != user['id']:
@@ -238,31 +257,56 @@ def init_routes(app):
             session.pop('student_row', None)
             return redirect(url_for('profile'))
         
-        return render_template('results.html', result=result, cv_filename=cv_filename, student_row=student_row, user=user)
+        return render_template('results.html', result=result, cv_filename=cv_filename, student_row=student_row, user=user, is_premium=is_premium)
 
-    @app.route('/test-hunter/<student_id>')
+
+
+    
+    @app.route('/profile/edit/<student_id>', methods=['GET', 'POST'])
     @login_required
-    def run_hunter(student_id):
-        """Run the hunter to find opportunities for a student"""
+    def edit_profile(student_id):
+        """Edit profile (top_skills and ambitions)"""
         try:
-            from src.services.db import verify_student_ownership
+            from src.services.db import get_student_profile_by_id, update_student_profile_data
             
             user = get_current_user()
             
-            # Verificar que el perfil pertenece al usuario actual
-            if not verify_student_ownership(student_id, user['id']):
-                return jsonify({'error': 'No tienes permiso para acceder a este perfil'}), 403
+            # Verify ownership
+            profile = get_student_profile_by_id(student_id, user['id'])
+            if not profile:
+                 flash("No tienes permiso para editar este perfil.", "error")
+                 return redirect(url_for('profile'))
             
-            # Run the Hunter logic
-            find_and_save_matches(student_id)
+            if request.method == 'POST':
+                # Get data from form
+                top_skills_raw = request.form.get('top_skills', '')
+                ambitions = request.form.get('ambitions', '')
+                
+                # Process skills (comma separated to list)
+                top_skills = [s.strip() for s in top_skills_raw.split(',') if s.strip()]
+                
+                # Update existing profile_data
+                current_profile_data = profile.get('profile_data', {})
+                current_profile_data['top_skills'] = top_skills
+                current_profile_data['ambitions'] = ambitions
+
+                # Call update service
+                if update_student_profile_data(student_id, current_profile_data, user['id']):
+                    flash("Perfil actualizado correctamente.", "success")
+                    return redirect(url_for('profile'))
+                else:
+                    flash("Error al actualizar el perfil.", "error")
             
-            # Redirect to the Dashboard
-            return redirect(url_for('dashboard', student_id=student_id))
+            is_premium = is_user_premium(user['id'])
+            return render_template('profile_edit.html', profile=profile, is_premium=is_premium, user=user)
             
         except Exception as e:
-            return jsonify({'error': f"Error running hunter: {str(e)}"}), 500
-    
+            print(f"Error in edit_profile: {e}")
+            flash("Ocurrió un error inesperado.", "error")
+            return redirect(url_for('profile'))
+
     @app.route('/dashboard/<student_id>')
+
     @login_required
     def dashboard(student_id):
         """Display matches dashboard for a student"""
@@ -279,7 +323,107 @@ def init_routes(app):
             
             # Obtener matches del estudiante
             matches = get_matches_for_student(student_id, user['id'])
+            is_premium = is_user_premium(user['id'])
             
-            return render_template('matches.html', matches=matches, student_id=student_id, user=user, student_profile=student_profile)
+            return render_template('matches.html', matches=matches, student_id=student_id, user=user, student_profile=student_profile, is_premium=is_premium)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+
+
+    # === RUTAS DE PAGO Y SUSCRIPCIÓN ===
+
+    @app.route('/upgrade')
+    @app.route('/upgrade/<student_id>')
+    @login_required
+    def upgrade(student_id=None):
+        """Muestra la página de upgrade a Pro (Fake Door)"""
+        user = session.get("user")
+        
+        # Si no hay student_id, intentar obtenerlo de la sesión
+        if not student_id:
+            student_row = session.get("student_row")
+            student_id = student_row.get('id') if student_row else None
+        
+        return render_template('upgrade.html', 
+                             user=user, 
+                             student_id=student_id)
+
+    @app.route('/checkout', methods=['POST', 'GET'])
+    @app.route('/checkout/<student_id>', methods=['POST', 'GET'])
+    @login_required
+    def checkout(student_id=None):
+        """Crea sesión de Checkout en Stripe"""
+        try:
+            # Obtener el student_id
+            if not student_id:
+                student_row = session.get("student_row")
+                student_id = student_row.get('id') if student_row else None
+
+            if not student_id:
+                return redirect(url_for('profile'))
+
+            checkout_session = stripe.checkout.Session.create(
+                line_items=[{
+                    'price': STRIPE_PRICE_ID,
+                    'quantity': 1,
+                }],
+                mode='subscription',
+                success_url=url_for('premium_activation', student_id=student_id, _external=True) + '?session_id={CHECKOUT_SESSION_ID}',
+                cancel_url=url_for('dashboard', student_id=student_id, _external=True),
+            )
+            return redirect(checkout_session.url, code=303)
+        except Exception as e:
+            return str(e)
+
+    @app.route('/premium-activation/<student_id>')
+    def premium_activation(student_id):
+        """Página de éxito estilo 'Concierge'"""
+        
+        # Validar pago con Stripe (opcional pero recomendado)
+        # Activar flag en DB
+        set_student_premium(student_id, True)
+        
+        return render_template('premium_activation.html', email=session.get('user', {}).get('email', 'tu correo'))
+
+    # === RUTAS EXISTENTES MODIFICADAS ===
+
+    @app.route('/test-hunter/<student_id>')
+    @login_required
+    def run_hunter(student_id):
+        try:
+            from src.services.db import verify_student_ownership, get_student_usage_info, update_last_search_date
+            
+            user = get_current_user()
+            if not verify_student_ownership(student_id, user['id']):
+                return jsonify({'error': 'Permiso denegado'}), 403
+            
+            # --- LÓGICA FREEMIUM ---
+            usage = get_student_usage_info(student_id)
+            is_premium = usage['is_premium']
+            last_search_str = usage['last_search_at']
+            
+            # Determinar límite
+            if is_premium:
+                limit = 3 # O más para Premium
+            else:
+                # Verificar límite diario (1 búsqueda)
+                if last_search_str:
+                     last_date = datetime.fromisoformat(last_search_str.replace('Z', '+00:00')).date()
+                     today = datetime.now(timezone.utc).date()
+                     
+                     if last_date == today:
+                         # Ya buscó hoy -> Fake Door Upgrade
+                         return redirect(url_for('upgrade', student_id=student_id))
+                
+                limit = 1 # Usuario Gratis
+            # ------------------------
+
+            find_and_save_matches(student_id, num_results=limit)
+            
+            # Actualizar timestamp
+            update_last_search_date(student_id)
+            
+            return redirect(url_for('dashboard', student_id=student_id))
+            
         except Exception as e:
             return jsonify({'error': str(e)}), 500

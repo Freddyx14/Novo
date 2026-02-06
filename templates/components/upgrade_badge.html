@@ -1,0 +1,94 @@
+{# Upgrade Badge Component for Navbar #}
+{# Include this in navbar sections. Requires is_premium variable #}
+{# Usage: include 'components/upgrade_badge.html' #}
+
+{% if not is_premium %}
+<div id="upgrade-badge-container" class="relative">
+    <!-- Upgrade Button -->
+    <a href="{{ url_for('upgrade') }}" 
+       id="upgrade-badge-btn"
+       class="group flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-amber-50 to-orange-50 hover:from-amber-100 hover:to-orange-100 border border-amber-200 rounded-full transition-all hover:shadow-md">
+        <svg class="w-4 h-4 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2 17.5 9.134a1 1 0 010 1.732l-3.354 1.935-1.18 4.455a1 1 0 01-1.933 0L9.854 12.8 6.5 10.866a1 1 0 010-1.732l3.354-1.935 1.18-4.455A1 1 0 0112 2z" clip-rule="evenodd"/>
+        </svg>
+        <span class="text-sm font-semibold text-amber-700 group-hover:text-amber-800">Pro</span>
+    </a>
+    
+    <!-- Tooltip/Dropdown on hover -->
+    <div id="upgrade-tooltip" class="absolute right-0 top-full mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
+        <div class="absolute -top-2 right-4 w-4 h-4 bg-white border-l border-t border-gray-100 transform rotate-45"></div>
+        
+        <p class="font-semibold text-novo-text mb-3">Desbloquea Novo Pro</p>
+        
+        <ul class="space-y-2 mb-4">
+            <li class="flex items-center gap-2 text-sm text-novo-text-light">
+                <svg class="w-4 h-4 text-novo-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Búsquedas sin límites
+            </li>
+            <li class="flex items-center gap-2 text-sm text-novo-text-light">
+                <svg class="w-4 h-4 text-novo-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Aplicaciones perfectas con IA
+            </li>
+            <li class="flex items-center gap-2 text-sm text-novo-text-light">
+                <svg class="w-4 h-4 text-novo-success flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                Banco de oportunidades premium
+            </li>
+        </ul>
+        
+        <a href="{{ url_for('upgrade') }}" class="block w-full text-center py-2 px-4 bg-gradient-to-r from-novo-primary to-indigo-600 text-white text-sm font-semibold rounded-lg hover:shadow-md transition-all">
+            Ver planes →
+        </a>
+        
+        <!-- Dismiss button -->
+        <button id="dismiss-upgrade-tooltip" class="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </button>
+    </div>
+</div>
+
+<style>
+    #upgrade-badge-container:hover #upgrade-tooltip {
+        opacity: 1;
+        visibility: visible;
+    }
+</style>
+
+<script>
+    // Dismiss tooltip for session
+    document.addEventListener('DOMContentLoaded', function() {
+        const dismissBtn = document.getElementById('dismiss-upgrade-tooltip');
+        const tooltip = document.getElementById('upgrade-tooltip');
+        const badge = document.getElementById('upgrade-badge-container');
+        
+        if (dismissBtn && tooltip) {
+            dismissBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                tooltip.style.display = 'none';
+                sessionStorage.setItem('upgrade-tooltip-dismissed', 'true');
+            });
+        }
+        
+        // Check if already dismissed this session
+        if (sessionStorage.getItem('upgrade-tooltip-dismissed') === 'true' && tooltip) {
+            tooltip.style.display = 'none';
+        }
+    });
+</script>
+{% else %}
+<!-- Premium Badge -->
+<div class="flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-full">
+    <svg class="w-4 h-4 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd" d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+    </svg>
+    <span class="text-sm font-semibold text-emerald-700">Pro</span>
+</div>
+{% endif %}

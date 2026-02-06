@@ -11,6 +11,8 @@ from typing import Any, Dict, Optional
 
 from dotenv import load_dotenv
 from supabase import Client, create_client
+from datetime import datetime, timezone
+from typing import Any, Dict, Optional
 
 
 # Load environment variables from .env if present
@@ -147,6 +149,81 @@ def get_student_profile_by_id(student_id: str, user_id: str) -> Optional[Dict[st
 
 def get_matches_for_student(student_id: str, user_id: str) -> list:
     """
+    Get matches for a specific student profile
+    """
+    try:
+        # First verify the profile belongs to the user
+        profile = get_student_profile_by_id(student_id, user_id)
+        if not profile:
+            return []
+            
+        response = (
+            get_client()
+            .table("matches")
+            .select("*")
+            .eq("student_id", student_id)
+            .order("created_at", desc=True)
+            .execute()
+        )
+        return response.data if response.data else []
+    except Exception as e:
+        print(f"Error getting matches: {e}")
+        return []
+
+def update_student_profile_data(student_id: str, updated_data: Dict[str, Any], user_id: str) -> bool:
+    """
+    Update the JSON profile data for a student.
+    
+    Args:
+        student_id: ID of the student profile
+        updated_data: Dictionary of data to update/merge into profile_data
+        user_id: ID of the user owning the profile (for security)
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # First verify existence and ownership
+        # We need to fetch the current profile first to merge the data, 
+        # or we can rely on the frontend sending the full structure.
+        # The prompt implies updating specific fields (top_skills, ambitions).
+        # Depending on how jsonb update works in supabase-py/postgres, 
+        # normally a patch update to a jsonb column might require specific syntax 
+        # or fetching the whole object, modifying it, and saving it back.
+        
+        # Let's fetch the current profile first to be safe and ensure we don't overwrite everything else.
+        current_profile = get_student_profile_by_id(student_id, user_id)
+        if not current_profile:
+            return False
+            
+        current_data = current_profile.get('profile_data', {})
+        if not isinstance(current_data, dict):
+            current_data = {}
+            
+        # Merge updated_data into current_data
+        # This is a shallow merge. If deeper merge is needed, logic should be adjusted.
+        for key, value in updated_data.items():
+            current_data[key] = value
+            
+        # Update the record
+        client = get_client()
+        response = (
+            client
+            .table("students")
+            .update({"profile_data": current_data})
+            .eq("id", student_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        
+        # Check if update was successful (response should contain data)
+        return bool(response.data)
+        
+    except Exception as e:
+        print(f"Error updating student profile: {e}")
+        return False
+
+    """
     Get all matches for a student, ensuring the student belongs to the user
     
     Args:
@@ -201,3 +278,121 @@ def verify_student_ownership(student_id: str, user_id: str) -> bool:
         print(f"Error verifying ownership: {e}")
         return False
 
+#New Code For Premium Features
+    
+def get_student_usage_info(student_id: str) -> Dict[str, Any]:
+    """Obtiene estado premium y última búsqueda."""
+    try:
+        response = get_client().table("students").select("is_premium, last_search_at").eq("id", student_id).single().execute()
+        data = response.data if response.data else {}
+        return {
+            "is_premium": data.get("is_premium", False),
+            "last_search_at": data.get("last_search_at")
+        }
+    except Exception as e:
+        print(f"Error usage info: {e}")
+        return {"is_premium": False, "last_search_at": None}
+
+def update_last_search_date(student_id: str) -> None:
+    """Marca la fecha actual como última búsqueda."""
+    try:
+        now_iso = datetime.now(timezone.utc).isoformat()
+        get_client().table("students").update({"last_search_at": now_iso}).eq("id", student_id).execute()
+    except Exception as e:
+        print(f"Error updating search date: {e}")
+
+
+def update_student_profile_data(student_id: str, new_data_dict: Dict[str, Any]) -> bool:
+    """
+    Updates the profile_data jsonb column for a specific student row.
+    """
+    try:
+        get_client().table("students").update({"profile_data": new_data_dict}).eq("id", student_id).execute()
+        return True
+    except Exception as e:
+        print(f"Error updating student profile data: {e}")
+        return False
+
+
+def update_student_profile_data(student_id: str, new_data_dict: Dict[str, Any]) -> bool:
+    """
+    Updates the profile_data jsonb column for a specific student row.
+    """
+    try:
+        get_client().table("students").update({"profile_data": new_data_dict}).eq("id", student_id).execute()
+        return True
+    except Exception as e:
+        print(f"Error updating student profile data: {e}")
+        return False
+
+
+
+def set_student_premium(student_id: str, is_premium: bool = True) -> None:
+    """
+    Update the premium status for a student.
+    
+    Args:
+        student_id: ID of the student profile
+        is_premium: New premium status
+    """
+    try:
+        (
+            get_client()
+            .table("students")
+            .update({"is_premium": is_premium})
+            .eq("id", student_id)
+            .execute()
+        )
+    except Exception as e:
+        print(f"Error setting student premium status: {e}")
+
+def set_student_premium(student_id: str, is_premium: bool = True) -> bool:
+    """
+    Sets the premium status for a student.
+    
+    Args:
+        student_id: ID of the student profile
+        is_premium: Boolean status to set
+        
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        response = (
+            get_client()
+            .table("students")
+            .update({"is_premium": is_premium})
+            .eq("id", student_id)
+            .execute()
+        )
+        return bool(response.data)
+    except Exception as e:
+        print(f"Error setting premium status: {e}")
+        return False
+
+def is_user_premium(user_id: str) -> bool:
+    """
+    Verifica si el usuario tiene algún perfil con is_premium=True.
+    
+    Args:
+        user_id: ID del usuario
+        
+    Returns:
+        bool: True si tiene al menos un perfil premium
+    """
+    if not user_id:
+        return False
+    try:
+        response = (
+            get_client()
+            .table("students")
+            .select("is_premium")
+            .eq("user_id", user_id)
+            .eq("is_premium", True)
+            .limit(1)
+            .execute()
+        )
+        return len(response.data) > 0 if response.data else False
+    except Exception as e:
+        print(f"Error checking premium status: {e}")
+        return False

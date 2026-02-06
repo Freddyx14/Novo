@@ -3,113 +3,202 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Perfiles - Novo</title>
-    <!-- TailwindCSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Mis Análisis - Novo</title>
+    {% include 'base_styles.html' %}
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
-    <!-- Navigation Bar -->
-    <nav class="bg-white shadow-md">
-        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div class="text-2xl font-bold text-indigo-900">🎓 Novo</div>
+<body class="bg-novo-bg min-h-screen">
+    <!-- Floating Background Elements -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div class="absolute top-20 left-20 w-80 h-80 bg-gradient-to-br from-purple-200/30 to-indigo-200/30 rounded-full blur-3xl animate-float"></div>
+        <div class="absolute bottom-20 right-10 w-72 h-72 bg-gradient-to-br from-emerald-200/20 to-teal-200/20 rounded-full blur-3xl animate-float" style="animation-delay: -3s;"></div>
+    </div>
+
+    <!-- Navbar -->
+    <nav class="novo-navbar fixed top-0 left-0 right-0 z-50 border-b border-gray-100">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 bg-gradient-to-br from-novo-primary to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200 group-hover:scale-110 transition-transform">
+                    <span class="text-white font-bold text-lg">N</span>
+                </div>
+                <span class="text-2xl font-bold novo-gradient-text">Novo</span>
+            </a>
             {% if user %}
             <div class="flex items-center gap-4">
-                <a href="{{ url_for('profile') }}" class="text-gray-700 hover:text-indigo-600 transition-colors">
-                    Nuevo Análisis
+                {% include 'components/upgrade_badge.html' %}
+                <a href="{{ url_for('profile') }}" class="text-novo-text-light hover:text-novo-primary transition-colors font-medium">
+                    Mi Perfil
                 </a>
-                <span class="text-gray-700">Hola, <strong>{{ user.name }}</strong></span>
-                <a href="{{ url_for('logout') }}" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
-                    Cerrar Sesión
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-gradient-to-br from-novo-primary to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                        {{ user.name[0]|upper }}
+                    </div>
+                    <span class="text-novo-text font-medium hidden sm:inline">{{ user.name }}</span>
+                </div>
+                <a href="{{ url_for('logout') }}" class="px-4 py-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors font-medium">
+                    Salir
                 </a>
             </div>
             {% endif %}
         </div>
     </nav>
     
-    <div class="container mx-auto px-4 py-12 max-w-6xl">
+    <div class="relative z-10 container mx-auto px-6 pt-28 pb-12 max-w-6xl">
         <!-- Header -->
-        <div class="text-center mb-12">
-            <h1 class="text-5xl font-bold text-indigo-900 mb-4">Mis Análisis de Perfil</h1>
-            <p class="text-xl text-indigo-700">Historial de todos tus análisis y oportunidades</p>
+        <div class="text-center mb-12 animate-slide-up">
+            <div class="inline-flex items-center gap-2 bg-purple-50 text-purple-600 px-4 py-2 rounded-full text-sm font-semibold mb-4">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                </svg>
+                Historial
+            </div>
+            <h1 class="text-4xl md:text-5xl font-bold text-novo-text mb-4">
+                Mis <span class="novo-gradient-text">Análisis</span>
+            </h1>
+            <p class="text-xl text-novo-text-light max-w-xl mx-auto">
+                Revisa tu historial de análisis y oportunidades encontradas
+            </p>
         </div>
 
         {% if profiles and profiles|length > 0 %}
+        <!-- Stats Bar -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 animate-fade-in">
+            <div class="bg-white rounded-2xl p-5 shadow-lg shadow-gray-100 text-center">
+                <p class="text-3xl font-bold novo-gradient-text">{{ profiles|length }}</p>
+                <p class="text-novo-text-light text-sm mt-1">Análisis</p>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-lg shadow-gray-100 text-center">
+                <p class="text-3xl font-bold text-novo-success">∞</p>
+                <p class="text-novo-text-light text-sm mt-1">Oportunidades</p>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-lg shadow-gray-100 text-center">
+                <p class="text-3xl font-bold text-purple-600">100%</p>
+                <p class="text-novo-text-light text-sm mt-1">Precisión IA</p>
+            </div>
+            <div class="bg-white rounded-2xl p-5 shadow-lg shadow-gray-100 text-center">
+                <p class="text-3xl font-bold text-amber-500">24/7</p>
+                <p class="text-novo-text-light text-sm mt-1">Disponible</p>
+            </div>
+        </div>
+
         <!-- Profiles Grid -->
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {% for profile in profiles %}
-            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300">
-                <!-- Profile Header -->
-                <div class="mb-4 pb-4 border-b-2 border-indigo-200">
-                    <h2 class="text-2xl font-bold text-indigo-900 mb-1">
-                        {{ profile.name or 'Perfil' }}
-                    </h2>
-                    <p class="text-sm text-gray-500">
-                        {% if profile.created_at %}
-                        Creado: {{ profile.created_at[:10] }}
-                        {% endif %}
-                    </p>
-                </div>
-
-                <!-- Profile Data Preview -->
-                {% if profile.profile_data %}
-                <div class="mb-4">
-                    {% if profile.profile_data.top_skills %}
-                    <div class="mb-3">
-                        <p class="text-sm font-semibold text-gray-700 mb-2">Habilidades:</p>
-                        <div class="flex flex-wrap gap-2">
-                            {% if profile.profile_data.top_skills is string %}
-                                <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs">
-                                    {{ profile.profile_data.top_skills }}
-                                </span>
-                            {% else %}
-                                {% for skill in profile.profile_data.top_skills[:3] %}
-                                <span class="px-2 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs">
-                                    {{ skill }}
-                                </span>
-                                {% endfor %}
-                            {% endif %}
+            <div class="novo-card stagger-item bg-white rounded-2xl shadow-lg shadow-gray-100 overflow-hidden group">
+                <!-- Card Header with gradient -->
+                <div class="h-2 bg-gradient-to-r from-novo-primary via-purple-500 to-indigo-600"></div>
+                
+                <div class="p-6">
+                    <!-- Profile Header -->
+                    <div class="mb-4 pb-4 border-b border-gray-100">
+                        <div class="flex items-center gap-3 mb-2">
+                            <div class="w-12 h-12 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-xl flex items-center justify-center">
+                                <span class="text-2xl">📄</span>
+                            </div>
+                            <div>
+                                <h2 class="text-xl font-bold text-novo-text group-hover:text-novo-primary transition-colors">
+                                    {{ profile.name or 'Perfil' }}
+                                </h2>
+                                {% if profile.created_at %}
+                                <p class="text-xs text-novo-text-light flex items-center gap-1">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                                    </svg>
+                                    {{ profile.created_at[:10] }}
+                                </p>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
-                    {% endif %}
 
-                    {% if profile.profile_data.summary_of_potential %}
-                    <div class="mb-3">
-                        <p class="text-sm text-gray-600 line-clamp-3">
-                            {{ profile.profile_data.summary_of_potential[:150] }}{% if profile.profile_data.summary_of_potential|length > 150 %}...{% endif %}
-                        </p>
+                    <!-- Profile Data Preview -->
+                    {% if profile.profile_data %}
+                    <div class="mb-5">
+                        {% if profile.profile_data.top_skills %}
+                        <div class="mb-4">
+                            <p class="text-xs font-semibold text-novo-text-light uppercase tracking-wider mb-2">Habilidades</p>
+                            <div class="flex flex-wrap gap-2">
+                                {% if profile.profile_data.top_skills is string %}
+                                    <span class="novo-pill bg-indigo-50 text-novo-primary border border-indigo-100 text-xs">
+                                        {{ profile.profile_data.top_skills }}
+                                    </span>
+                                {% elif profile.profile_data.top_skills is mapping %}
+                                    {% for skill in (profile.profile_data.top_skills|list)[:3] %}
+                                    <span class="novo-pill bg-indigo-50 text-novo-primary border border-indigo-100 text-xs">
+                                        {{ skill }}
+                                    </span>
+                                    {% endfor %}
+                                {% else %}
+                                    {% for skill in profile.profile_data.top_skills[:3] %}
+                                    <span class="novo-pill bg-indigo-50 text-novo-primary border border-indigo-100 text-xs">
+                                        {{ skill }}
+                                    </span>
+                                    {% endfor %}
+                                    {% if profile.profile_data.top_skills|length > 3 %}
+                                    <span class="novo-pill bg-gray-50 text-novo-text-light border border-gray-100 text-xs">
+                                        +{{ profile.profile_data.top_skills|length - 3 }}
+                                    </span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+
+                        {% if profile.profile_data.summary_of_potential %}
+                        <div>
+                            <p class="text-xs font-semibold text-novo-text-light uppercase tracking-wider mb-2">Resumen</p>
+                            <p class="text-sm text-novo-text-light line-clamp-3 leading-relaxed">
+                                {{ profile.profile_data.summary_of_potential[:150] }}{% if profile.profile_data.summary_of_potential|length > 150 %}...{% endif %}
+                            </p>
+                        </div>
+                        {% endif %}
                     </div>
                     {% endif %}
-                </div>
-                {% endif %}
 
-                <!-- Actions -->
-                <div class="flex gap-2">
+                    <!-- Actions -->
                     <a href="{{ url_for('dashboard', student_id=profile.id) }}" 
-                       class="flex-1 text-center px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors text-sm">
-                        Ver Oportunidades
+                       class="novo-btn block w-full text-center py-3 px-4 bg-gradient-to-r from-novo-primary to-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-200/50 hover:shadow-xl">
+                        <span class="flex items-center justify-center gap-2">
+                            Ver Oportunidades
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                            </svg>
+                        </span>
                     </a>
                 </div>
             </div>
             {% endfor %}
         </div>
+
         {% else %}
         <!-- No Profiles Yet -->
-        <div class="bg-white rounded-2xl shadow-xl p-12 text-center">
-            <svg class="w-20 h-20 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">No tienes análisis aún</h2>
-            <p class="text-gray-600 mb-6">Sube tu CV para obtener tu primer análisis personalizado</p>
-            <a href="{{ url_for('profile') }}" class="inline-block px-6 py-3 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors">
+        <div class="novo-card bg-white rounded-3xl shadow-xl p-12 text-center max-w-xl mx-auto animate-slide-up">
+            <div class="w-24 h-24 bg-gradient-to-br from-indigo-100 to-purple-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <svg class="w-12 h-12 text-novo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-novo-text mb-3">No tienes análisis aún</h2>
+            <p class="text-novo-text-light mb-8 max-w-sm mx-auto">
+                Sube tu CV y cuéntanos sobre ti para obtener tu primer análisis personalizado con IA
+            </p>
+            <a href="{{ url_for('profile') }}" 
+               class="novo-btn inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-novo-primary to-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-200 hover:shadow-xl">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
                 Crear Primer Análisis
             </a>
         </div>
         {% endif %}
 
-        <!-- Back to Profile Button -->
-        <div class="text-center mt-8">
-            <a href="{{ url_for('profile') }}" class="inline-block px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors">
-                + Nuevo Análisis de Perfil
+        <!-- New Analysis Button -->
+        <div class="text-center mt-10 animate-fade-in" style="animation-delay: 0.5s;">
+            <a href="{{ url_for('profile') }}" 
+               class="novo-btn inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-novo-success to-emerald-600 text-white rounded-xl font-semibold shadow-lg shadow-emerald-200 hover:shadow-xl">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                Nuevo Análisis de Perfil
             </a>
         </div>
     </div>
