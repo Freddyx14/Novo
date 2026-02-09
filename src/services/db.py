@@ -12,7 +12,6 @@ from typing import Any, Dict, Optional
 from dotenv import load_dotenv
 from supabase import Client, create_client
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
 
 
 # Load environment variables from .env if present
@@ -223,34 +222,7 @@ def update_student_profile_data(student_id: str, updated_data: Dict[str, Any], u
         print(f"Error updating student profile: {e}")
         return False
 
-    """
-    Get all matches for a student, ensuring the student belongs to the user
-    
-    Args:
-        student_id: ID of the student profile
-        user_id: UUID of the authenticated user
-        
-    Returns:
-        list: List of matches or empty list
-    """
-    try:
-        # First verify the student belongs to the user
-        student = get_student_profile_by_id(student_id, user_id)
-        if not student:
-            return []
-        
-        # Get matches for this student
-        response = (
-            get_client()
-            .table("matches")
-            .select("*")
-            .eq("student_id", student_id)
-            .execute()
-        )
-        return response.data if response.data else []
-    except Exception as e:
-        print(f"Error getting matches: {e}")
-        return []
+
 
 
 def verify_student_ownership(student_id: str, user_id: str) -> bool:
@@ -301,50 +273,19 @@ def update_last_search_date(student_id: str) -> None:
     except Exception as e:
         print(f"Error updating search date: {e}")
 
-
-def update_student_profile_data(student_id: str, new_data_dict: Dict[str, Any]) -> bool:
-    """
-    Updates the profile_data jsonb column for a specific student row.
-    """
-    try:
-        get_client().table("students").update({"profile_data": new_data_dict}).eq("id", student_id).execute()
-        return True
-    except Exception as e:
-        print(f"Error updating student profile data: {e}")
+def is_user_premium(user_id: str) -> bool:
+    """Verifica si el usuario tiene algún perfil con is_premium=True."""
+    if not user_id:
         return False
-
-
-def update_student_profile_data(student_id: str, new_data_dict: Dict[str, Any]) -> bool:
-    """
-    Updates the profile_data jsonb column for a specific student row.
-    """
     try:
-        get_client().table("students").update({"profile_data": new_data_dict}).eq("id", student_id).execute()
-        return True
+        response = get_client().table("students").select("is_premium").eq("user_id", user_id).eq("is_premium", True).limit(1).execute()
+        return len(response.data) > 0 if response.data else False
     except Exception as e:
-        print(f"Error updating student profile data: {e}")
+        print(f"Error checking premium status: {e}")
         return False
 
 
 
-def set_student_premium(student_id: str, is_premium: bool = True) -> None:
-    """
-    Update the premium status for a student.
-    
-    Args:
-        student_id: ID of the student profile
-        is_premium: New premium status
-    """
-    try:
-        (
-            get_client()
-            .table("students")
-            .update({"is_premium": is_premium})
-            .eq("id", student_id)
-            .execute()
-        )
-    except Exception as e:
-        print(f"Error setting student premium status: {e}")
 
 def set_student_premium(student_id: str, is_premium: bool = True) -> bool:
     """
@@ -368,31 +309,4 @@ def set_student_premium(student_id: str, is_premium: bool = True) -> bool:
         return bool(response.data)
     except Exception as e:
         print(f"Error setting premium status: {e}")
-        return False
-
-def is_user_premium(user_id: str) -> bool:
-    """
-    Verifica si el usuario tiene algún perfil con is_premium=True.
-    
-    Args:
-        user_id: ID del usuario
-        
-    Returns:
-        bool: True si tiene al menos un perfil premium
-    """
-    if not user_id:
-        return False
-    try:
-        response = (
-            get_client()
-            .table("students")
-            .select("is_premium")
-            .eq("user_id", user_id)
-            .eq("is_premium", True)
-            .limit(1)
-            .execute()
-        )
-        return len(response.data) > 0 if response.data else False
-    except Exception as e:
-        print(f"Error checking premium status: {e}")
         return False
