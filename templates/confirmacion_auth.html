@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>¡Cuenta activada! - Novo</title>
+    <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/logo-novo.svg') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='images/logo-novo.svg') }}">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -14,9 +16,12 @@
 
     <div class="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center transform transition-all hover:scale-[1.01]">
         
+        <!-- Logo -->
+        <img src="{{ url_for('static', filename='images/logo-novo.svg') }}" alt="Novo" class="mx-auto h-16 w-16 rounded-xl mb-4">
+
         <!-- Icono Check -->
-        <div class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-6">
-            <svg class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-6">
+            <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
             </svg>
         </div>
