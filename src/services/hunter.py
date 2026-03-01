@@ -6,7 +6,7 @@ from supabase import create_client, Client
 
 # Setup: Initialize Gemini and Supabase clients
 genai.configure(api_key=os.environ.get("GEMINI_API_KEY"))
-gemini_model = genai.GenerativeModel("gemini-flash-lite-latest")
+gemini_model = genai.GenerativeModel("gemini-2.5-flash")
 
 supabase: Client = create_client(
     os.environ.get("SUPABASE_URL"),

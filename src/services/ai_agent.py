@@ -19,8 +19,12 @@ class GeminiAgent:
     
     def __init__(self):
         """Initialize Gemini client with API key"""
-        # Support both env var names (some docs use GOOGLE_API_KEY)
-        api_key = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
+        # Normalize API key env vars to avoid dual-key warnings from the SDK.
+        # Prefer GEMINI_API_KEY, fallback to GOOGLE_API_KEY.
+        gemini_key = (os.getenv("GEMINI_API_KEY") or "").strip()
+        google_key = (os.getenv("GOOGLE_API_KEY") or "").strip()
+
+        api_key = gemini_key or google_key
         
         if not api_key:
             raise ValueError(
@@ -28,11 +32,15 @@ class GeminiAgent:
                 "Please set GEMINI_API_KEY (or GOOGLE_API_KEY) in your .env file."
             )
 
+        # Keep a single canonical env var for the process (silences SDK warning).
+        os.environ["GEMINI_API_KEY"] = api_key
+        os.environ.pop("GOOGLE_API_KEY", None)
+
         # google-genai client
         self.client = genai.Client(api_key=api_key)
 
-        # Use the requested fast model
-        self.model_name = "gemini-flash-lite-latest"
+        # Use Gemini 2.5 Flash
+        self.model_name = "gemini-2.5-flash"
         
         print("Gemini client initialized successfully")
     
