@@ -13,6 +13,80 @@ supabase: Client = create_client(
     os.environ.get("SUPABASE_KEY")
 )
 
+########################################
+#########   SOLO ES TEMPORAL   #########
+########################################
+# Toggle entre Perplexity (real) y Gemini (temporal para testing)
+USE_GEMINI_FOR_SEARCH = True  # Cambiar a False cuando Perplexity funcione
+
+
+def search_opportunities_with_gemini(cv_raw_text, brain_dump_text="", profile_data=None, num_results=3):
+    """
+    TEMPORAL: Usa Gemini para generar oportunidades basadas en el perfil del estudiante.
+    NOTA: Estas NO son oportunidades verificadas en tiempo real, son sintéticas para testing.
+    """
+    print("🤖 Usando Gemini para generar oportunidades (MODO TEMPORAL)...")
+    
+    # Build student context
+    if not cv_raw_text and profile_data:
+        cv_raw_text = f"""Nombre: {profile_data.get('name', 'Estudiante')}
+Universidad: {profile_data.get('university', 'No especificada')}
+Carrera: {profile_data.get('career', 'No especificada')}
+Nivel: {profile_data.get('study_level', 'pregrado')}
+País: {profile_data.get('country', 'No especificado')}
+Idiomas: {', '.join(profile_data.get('languages', ['Español']))}
+Habilidades: {', '.join(profile_data.get('top_skills', []))}
+Intereses: {', '.join(profile_data.get('interests', []))}
+Ambiciones: {profile_data.get('ambitions', 'No especificadas')}"""
+    
+    student_context = f"CV:\n{cv_raw_text[:4000]}"
+    if brain_dump_text and brain_dump_text.strip():
+        student_context += f"\n\nContexto adicional:\n{brain_dump_text[:1000]}"
+    
+    prompt = f"""Basándote en este perfil de estudiante, genera {num_results} oportunidades educativas/profesionales REALISTAS Y RELEVANTES.
+
+{student_context}
+
+IMPORTANTE:
+- Genera oportunidades que sean ADECUADAS para el nivel de estudios, país y perfil del estudiante
+- Incluye variedad: becas, pasantías, programas de investigación, intercambios, concursos, etc.
+- Usa nombres de programas que suenen realistas (pueden ser inspirados en programas reales)
+- Incluye URLs realistas (pueden ser ficticias pero deben parecer reales)
+
+Devuelve SOLO un array JSON válido, sin texto adicional:
+[
+  {{
+    "title": "Nombre del programa",
+    "company": "Organización",
+    "location": "País/Ciudad o Remoto",
+    "url": "https://ejemplo.com/programa",
+    "description": "Descripción breve",
+    "opportunity_type": "beca|pasantía|investigación|intercambio|concurso",
+    "eligibility_level": "pregrado|maestría|doctorado|todos",
+    "deadline_info": "Plazo de aplicación"
+  }}
+]"""
+    
+    try:
+        response = gemini_model.generate_content(prompt)
+        response_text = response.text.strip()
+        
+        # Clean JSON
+        if "```json" in response_text:
+            response_text = response_text.split("```json")[1].split("```")[0].strip()
+        elif "```" in response_text:
+            response_text = response_text.split("```")[1].split("```")[0].strip()
+        
+        opportunities = json.loads(response_text)
+        print(f"✓ Gemini generó {len(opportunities)} oportunidades")
+        return opportunities
+        
+    except Exception as e:
+        print(f"❌ Error con Gemini: {e}")
+        return []
+########################################
+#########   SOLO ES TEMPORAL   #########
+########################################
 
 def search_opportunities_with_perplexity(cv_raw_text, brain_dump_text="", profile_data=None, num_results=3):
     """
@@ -231,14 +305,29 @@ def find_and_save_matches(student_id, num_results=3):
         print(f"Processing matches for student: {student_row.get('name', 'Unknown')}")
         print(f"CV text length: {len(cv_raw_text)} chars | Brain dump: {'Yes' if brain_dump_text else 'No'}")
 
-        # 4. Search using FULL raw texts (the key change!)
-        opportunities = search_opportunities_with_perplexity(
-            cv_raw_text=cv_raw_text,
-            brain_dump_text=brain_dump_text,
-            profile_data=profile_data,
-            num_results=num_results
-        )
-        
+
+########################################
+#########   SOLO ES TEMPORAL   #########
+########################################
+        # 4. Search using FULL raw texts - Elegir entre Gemini (temporal) o Perplexity (real)
+        if USE_GEMINI_FOR_SEARCH:
+            opportunities = search_opportunities_with_gemini(
+                cv_raw_text=cv_raw_text,
+                brain_dump_text=brain_dump_text,
+                profile_data=profile_data,
+                num_results=num_results
+            )
+        else:
+            opportunities = search_opportunities_with_perplexity(
+                cv_raw_text=cv_raw_text,
+                brain_dump_text=brain_dump_text,
+                profile_data=profile_data,
+                num_results=num_results
+            )
+########################################
+#########   SOLO ES TEMPORAL   #########      
+########################################
+
         print(f"Found {len(opportunities)} opportunities to evaluate")
         
         matches_saved = 0

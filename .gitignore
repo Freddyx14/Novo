@@ -5,6 +5,7 @@ __pycache__/
 *.so
 .Python
 env/
+venv/
 .venv/
 ENV/
 build/
@@ -51,3 +52,6 @@ uploads/
 .DS_Store
 Thumbs.db
 .env*.local
+
+# Node
+node_modules/

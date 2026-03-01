@@ -350,9 +350,26 @@ def init_routes(app):
             student_row = session.get("student_row")
             student_id = student_row.get('id') if student_row else None
         
+        # Calcular búsquedas del día para mostrar al usuario
+        searches_today = 0
+        search_limit = 20
+        if student_id:
+            from datetime import datetime, timezone
+            today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+            
+            supabase = _get_supabase_client()
+            searches_result = supabase.table("matches").select("id", count="exact").eq("student_id", student_id).gte("created_at", today_start).execute()
+            searches_today = searches_result.count if searches_result.count else 0
+        
+        # Calcular porcentaje para la barra de progreso (evita división por cero)
+        progress_percentage = (searches_today / search_limit * 100) if search_limit > 0 else 0
+        
         return render_template('upgrade.html', 
                              user=user, 
-                             student_id=student_id)
+                             student_id=student_id,
+                             searches_today=searches_today,
+                             search_limit=search_limit,
+                             progress_percentage=progress_percentage)
 
     @app.route('/checkout', methods=['POST', 'GET'])
     @app.route('/checkout/<student_id>', methods=['POST', 'GET'])
@@ -406,23 +423,25 @@ def init_routes(app):
             # --- LÓGICA FREEMIUM ---
             usage = get_student_usage_info(student_id)
             is_premium = usage['is_premium']
-            last_search_str = usage['last_search_at']
             
-            # Determinar límite
+            # Determinar límite y contar búsquedas de hoy
             if is_premium:
                 limit = 3 # O más para Premium
             else:
-                # Verificar límite diario (1 búsqueda)
-                if last_search_str:
-                     from dateutil.parser import parse as parse_date
-                     last_date = parse_date(last_search_str).date()
-                     today = datetime.now(timezone.utc).date()
-                     
-                     if last_date == today:
-                         # Ya buscó hoy -> Fake Door Upgrade
-                         return redirect(url_for('upgrade', student_id=student_id))
+                # Contar búsquedas realizadas hoy (desde medianoche UTC)
+                from datetime import datetime, timezone
+                today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
                 
-                limit = 1 # Usuario Gratis
+                supabase = _get_supabase_client()
+                searches_today = supabase.table("matches").select("id", count="exact").eq("student_id", student_id).gte("created_at", today_start).execute()
+                count_today = searches_today.count if searches_today.count else 0
+                
+                # Límite: 20 búsquedas por día para usuarios gratuitos
+                if count_today >= 20:
+                    # Ya alcanzó el límite -> Fake Door Upgrade
+                    return redirect(url_for('upgrade', student_id=student_id))
+                
+                limit = 20 # Usuario Gratis: 20 búsquedas por día
             # ------------------------
 
             find_and_save_matches(student_id, num_results=limit)

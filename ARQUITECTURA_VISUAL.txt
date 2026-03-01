@@ -1,232 +1,267 @@
 ┌─────────────────────────────────────────────────────────────────────────┐
 │                    NOVO - ARQUITECTURA DEL SISTEMA                      │
+│                    Última actualización: Feb 2026                        │
 └─────────────────────────────────────────────────────────────────────────┘
 
 ╔═══════════════════════════════════════════════════════════════════════╗
-║                        CAPA DE PRESENTACIÓN                           ║
+║                      RESUMEN EJECUTIVO                                ║
 ╚═══════════════════════════════════════════════════════════════════════╝
 
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│              │  │              │  │              │  │              │
-│  login.html  │  │register.html │  │ profile.html │  │ results.html │
-│              │  │              │  │              │  │              │
-└──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘
-       │                 │                 │                 │
-       └─────────────────┴─────────────────┴─────────────────┘
-                              │
-┌──────────────┐  ┌──────────────┐  ┌──────────────────────────────────┐
-│              │  │              │  │                                  │
-│matches.html  │  │my_profiles   │  │        Todos protegidos          │
-│              │  │    .html     │  │        con @login_required       │
-└──────┬───────┘  └──────┬───────┘  └──────────────────────────────────┘
-       │                 │
-       └─────────────────┘
+  Tipo:       Monolito Flask con server-side rendering (Jinja2)
+  Deploy:     Vercel (serverless) via api/index.py
+  BD:         Supabase (PostgreSQL + Auth)
+  IA:         Google Gemini (análisis) + Perplexity (búsqueda web)
+  Pagos:      Stripe (plan Premium)
+  Frontend:   HTML + TailwindCSS CDN (NO React, NO Next.js)
+  Local:      python app.py → http://localhost:5000
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                        CAPA DE PRESENTACIÓN                           ║
+║                     templates/ (Jinja2 + TailwindCSS)                 ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+  RUTAS PÚBLICAS                    RUTAS PROTEGIDAS (@login_required)
+  ─────────────                     ──────────────────────────────────
+  ┌──────────────┐                  ┌──────────────┐  ┌──────────────┐
+  │ login.html   │                  │ profile.html │  │ results.html │
+  │ register.html│                  │profile_view  │  │ matches.html │
+  │confirmacion_ │                  │profile_edit  │  │ upgrade.html │
+  │  auth.html   │                  │my_profiles   │  │premium_activ.│
+  └──────────────┘                  └──────────────┘  └──────────────┘
+
+  Componentes reutilizables:
+  └── components/upgrade_badge.html
+
+  Estilos base:
+  └── base_styles.html (incluido por herencia Jinja2)
 
 ╔═══════════════════════════════════════════════════════════════════════╗
 ║                        CAPA DE APLICACIÓN                             ║
 ╚═══════════════════════════════════════════════════════════════════════╝
 
-                          ┌──────────────┐
-                          │   app.py     │
-                          │  (Flask)     │
-                          └──────┬───────┘
-                                 │
-                    ┌────────────┴────────────┐
-                    │                         │
-              ┌─────▼──────┐          ┌──────▼──────┐
-              │            │          │             │
-              │ routes.py  │◄─────────│  session    │
-              │            │          │  (Flask)    │
-              └─────┬──────┘          └─────────────┘
-                    │
-        ┌───────────┼───────────┐
-        │           │           │
-        ▼           ▼           ▼
+                          ┌──────────────────┐
+                          │     app.py       │
+                          │   (Entry point)  │
+                          │   Puerto: 5000   │
+                          └────────┬─────────┘
+                                   │
+               ┌───────────────────┼───────────────────┐
+               │                   │                   │
+        ┌──────▼──────┐    ┌──────▼──────┐    ┌──────▼──────┐
+        │ api/index.py│    │ routes.py   │    │   Flask     │
+        │  (Vercel    │    │ (Endpoints) │    │  session    │
+        │  entry)     │    │             │    │  (JWT)      │
+        └─────────────┘    └──────┬──────┘    └─────────────┘
+                                  │
+          ┌───────────┬───────────┼───────────┬───────────┐
+          │           │           │           │           │
+          ▼           ▼           ▼           ▼           ▼
 
-┌───────────┐ ┌───────────┐ ┌───────────┐
-│           │ │           │ │           │
-│  /login   │ │ /profile  │ │/dashboard │
-│ /register │ │ /results  │ │ /hunter   │
-│  /logout  │ │/my-profiles│           │
-│           │ │           │ │           │
-└───────────┘ └───────────┘ └───────────┘
-  PÚBLICO       PROTEGIDO     PROTEGIDO
+    ┌──────────┐┌──────────┐┌──────────┐┌──────────┐┌──────────┐
+    │ /login   ││ /profile ││/results  ││/dashboard││/upgrade  │
+    │/register ││/my-      ││/test-    ││  /<id>   ││/premium  │
+    │ /logout  ││ profiles ││ hunter/  ││          ││          │
+    │  / (root)││/profile- ││  <id>    ││          ││          │
+    │          ││ view/<id>││          ││          ││          │
+    └──────────┘└──────────┘└──────────┘└──────────┘└──────────┘
+      PÚBLICO     PROTEGIDO   PROTEGIDO   PROTEGIDO   PROTEGIDO
 
 ╔═══════════════════════════════════════════════════════════════════════╗
 ║                      CAPA DE SERVICIOS                                ║
+║                       src/services/                                   ║
 ╚═══════════════════════════════════════════════════════════════════════╝
 
-┌─────────────────────────────────────────────────────────────────────┐
-│                     src/services/                                    │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐       │
-│  │                │  │                │  │                │       │
-│  │   auth.py      │  │    db.py       │  │  ai_agent.py   │       │
-│  │                │  │                │  │                │       │
-│  │ • register     │  │ • save_profile │  │ • analyze_cv   │       │
-│  │ • login        │  │ • get_profiles │  │ • gemini API   │       │
-│  │ • logout       │  │ • get_matches  │  │                │       │
-│  │ • @login_req   │  │ • verify_own   │  │                │       │
-│  │                │  │                │  │                │       │
-│  └────────┬───────┘  └────────┬───────┘  └────────┬───────┘       │
-│           │                   │                   │                │
-│           │                   │                   │                │
-│  ┌────────▼───────────────────▼───────────────────▼───────┐       │
-│  │                                                          │       │
-│  │                   hunter.py                              │       │
-│  │                                                          │       │
-│  │  • search_opportunities_with_perplexity()               │       │
-│  │  • match_and_rank_with_gemini()                         │       │
-│  │  • find_and_save_matches()                              │       │
-│  │                                                          │       │
-│  └──────────────────────────────────────────────────────────┘       │
-│                                                                      │
-└──────────────────────────────────────────────────────────────────────┘
+  ┌────────────────┐  ┌────────────────┐  ┌────────────────┐
+  │   auth.py      │  │    db.py       │  │  ai_agent.py   │
+  │                │  │                │  │                │
+  │ • register_    │  │ • save_student │  │ • analyze_     │
+  │   user()       │  │   _profile()   │  │   profile()    │
+  │ • login_       │  │ • get_student  │  │ • Gemini API   │
+  │   user()       │  │   _profiles()  │  │   multimodal   │
+  │ • logout_      │  │ • get_matches()│  │   (PDF+audio)  │
+  │   user()       │  │ • set_student  │  │                │
+  │ • @login_      │  │   _premium()   │  │                │
+  │   required     │  │ • is_user_     │  │                │
+  │ • is_          │  │   premium()    │  │                │
+  │   authenticated│  │ • verify_      │  │                │
+  │ • get_current  │  │   student_     │  │                │
+  │   _user()      │  │   ownership()  │  │                │
+  └────────┬───────┘  └────────┬───────┘  └────────┬───────┘
+           │                   │                   │
+  ┌────────▼───────────────────▼───────────────────▼───────┐
+  │                                                          │
+  │                     hunter.py                            │
+  │                                                          │
+  │  • search_opportunities_with_perplexity()               │
+  │    → Perplexity API busca oportunidades reales          │
+  │  • match_and_rank_with_gemini()                         │
+  │    → Gemini rankea y puntúa matches                     │
+  │  • find_and_save_matches()                              │
+  │    → Orquesta: buscar → rankear → guardar en BD        │
+  │                                                          │
+  └──────────────────────────────────────────────────────────┘
 
 ╔═══════════════════════════════════════════════════════════════════════╗
 ║                        CAPA DE DATOS                                  ║
+║                     Supabase (PostgreSQL)                             ║
 ╚═══════════════════════════════════════════════════════════════════════╝
 
-┌─────────────────────────────────────────────────────────────────────┐
-│                        SUPABASE                                      │
-├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
-│  ┌──────────────────┐       ┌──────────────────┐                   │
-│  │   auth.users     │       │    students      │                   │
-│  ├──────────────────┤       ├──────────────────┤                   │
-│  │ • id (UUID)      │◄──────┤ • id             │                   │
-│  │ • email          │  FK   │ • name           │                   │
-│  │ • password       │       │ • profile_data   │                   │
-│  │ • created_at     │       │ • user_id  ───────►                  │
-│  │ • metadata       │       │ • created_at     │                   │
-│  └──────────────────┘       └────────┬─────────┘                   │
-│         ▲                             │                             │
-│         │                             │ FK                          │
-│         │                             │                             │
-│         │                    ┌────────▼─────────┐                  │
-│         │                    │    matches       │                  │
-│         │                    ├──────────────────┤                  │
-│         │                    │ • id             │                  │
-│         │                    │ • student_id ────►                  │
-│         │                    │ • title          │                  │
-│         │                    │ • company        │                  │
-│         │                    │ • location       │                  │
-│         │                    │ • match_score    │                  │
-│         │                    │ • match_reason   │                  │
-│         │                    │ • source_url     │                  │
-│         │                    │ • created_at     │                  │
-│         │                    └──────────────────┘                  │
-│         │                                                           │
-│         │                                                           │
-│         └───────────── Row Level Security (RLS) ────────────────────┤
-│              Solo el usuario puede ver sus propios datos            │
-│                                                                      │
-└──────────────────────────────────────────────────────────────────────┘
+  ┌──────────────────┐       ┌──────────────────┐
+  │   auth.users     │       │    students      │
+  ├──────────────────┤       ├──────────────────┤
+  │ • id (UUID)      │◄──────┤ • id             │
+  │ • email          │  FK   │ • name           │
+  │ • password       │       │ • profile_data   │
+  │ • created_at     │       │ • user_id  ───────►
+  │ • metadata       │       │ • created_at     │
+  └──────────────────┘       └────────┬─────────┘
+                                      │
+                                      │ FK
+                                      │
+                             ┌────────▼─────────┐
+                             │    matches       │
+                             ├──────────────────┤
+                             │ • id             │
+                             │ • student_id ────►
+                             │ • title          │
+                             │ • company        │
+                             │ • location       │
+                             │ • match_score    │
+                             │ • match_reason   │
+                             │ • source_url     │
+                             │ • created_at     │
+                             └──────────────────┘
+
+  Seguridad BD:
+  └── Row Level Security (RLS): auth.uid() = user_id en todas las tablas
 
 ╔═══════════════════════════════════════════════════════════════════════╗
-║                      SERVICIOS EXTERNOS                               ║
+║                      SERVICIOS EXTERNOS (APIs)                        ║
 ╚═══════════════════════════════════════════════════════════════════════╝
 
-┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│                 │  │                 │  │                 │
-│  Google Gemini  │  │   Perplexity    │  │  Supabase Auth  │
-│                 │  │                 │  │                 │
-│ • Análisis CV   │  │ • Búsqueda de   │  │ • JWT Tokens    │
-│ • Análisis Audio│  │   oportunidades │  │ • Password Hash │
-│ • Match Ranking │  │ • Web scraping  │  │ • Session Mgmt  │
-│                 │  │                 │  │                 │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
+  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+  │  Google Gemini  │  │   Perplexity    │  │     Stripe      │
+  │  (GEMINI_API_   │  │ (PERPLEXITY_    │  │ (STRIPE_SECRET  │
+  │   KEY)          │  │  API_KEY)       │  │  _KEY)          │
+  │                 │  │                 │  │                 │
+  │ • Análisis CV   │  │ • Búsqueda de   │  │ • Checkout de   │
+  │ • Análisis Audio│  │   oportunidades │  │   pagos         │
+  │ • Ranking de    │  │   reales en web │  │ • Plan Premium  │
+  │   matches       │  │                 │  │                 │
+  └─────────────────┘  └─────────────────┘  └─────────────────┘
+
+  ┌─────────────────┐
+  │  Supabase Auth  │
+  │ (SUPABASE_URL   │
+  │  SUPABASE_KEY)  │
+  │                 │
+  │ • JWT Tokens    │
+  │ • Password Hash │
+  │ • Session Mgmt  │
+  └─────────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                      VARIABLES DE ENTORNO (.env)                      ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+  Variable               Servicio          Uso
+  ────────               ────────          ───
+  SUPABASE_URL           Supabase          URL del proyecto
+  SUPABASE_KEY           Supabase          Clave anon/public
+  SECRET_KEY             Flask             Firma de sesiones
+  GEMINI_API_KEY         Google            Análisis IA (Gemini)
+  GOOGLE_API_KEY         Google            Alias de GEMINI_API_KEY
+  PERPLEXITY_API_KEY     Perplexity        Búsqueda web de oportunidades
+  STRIPE_SECRET_KEY      Stripe            Procesamiento de pagos
+  STRIPE_PRICE_ID        Stripe            ID del producto Premium
 
 ╔═══════════════════════════════════════════════════════════════════════╗
 ║                    FLUJO DE AUTENTICACIÓN                             ║
 ╚═══════════════════════════════════════════════════════════════════════╝
 
-1. REGISTRO
-   Usuario → /register → Supabase Auth → auth.users
-                                            ↓
-                                     JWT Token
-                                            ↓
-                                    Flask Session
+  1. REGISTRO
+     Usuario → /register → Supabase Auth → auth.users
+                                              ↓
+                                       JWT Token
+                                              ↓
+                                      Flask Session
 
-2. LOGIN
-   Usuario → /login → Supabase Auth verifica → JWT Token
-                                                   ↓
-                                            Flask Session
-                                            {user_id, email, token}
+  2. LOGIN
+     Usuario → /login → Supabase Auth verifica → JWT Token
+                                                     ↓
+                                              Flask Session
+                                              {user_id, email, token}
 
-3. ACCESO PROTEGIDO
-   Request → @login_required → Verifica session
-                                      ↓
-                              Si NO autenticado → /login
-                                      ↓
-                              Si autenticado → Procesar
+  3. ACCESO PROTEGIDO
+     Request → @login_required → Verifica session
+                                        ↓
+                                Si NO autenticado → /login
+                                        ↓
+                                Si autenticado → Procesar
 
 ╔═══════════════════════════════════════════════════════════════════════╗
 ║                    FLUJO DE ANÁLISIS DE PERFIL                        ║
 ╚═══════════════════════════════════════════════════════════════════════╝
 
-Usuario sube CV + Audio
-        ↓
-ai_agent.analyze_profile()
-        ↓
-Google Gemini procesa
-        ↓
-Resultado: {name, skills, ambitions, summary}
-        ↓
-db.save_student_profile(result, user_id)  ← VINCULA A USUARIO
-        ↓
-INSERT INTO students (name, profile_data, user_id)
-        ↓
-Retorna student_row
-        ↓
-Session guarda analysis_result + student_row
-        ↓
-Redirect → /results
+  Usuario sube CV (PDF) + Audio (opcional)
+          ↓
+  ai_agent.analyze_profile()
+          ↓
+  Google Gemini procesa (multimodal)
+          ↓
+  Resultado: {name, skills, ambitions, summary}
+          ↓
+  db.save_student_profile(result, user_id)
+          ↓
+  INSERT INTO students (name, profile_data, user_id)
+          ↓
+  Session guarda analysis_result + student_row
+          ↓
+  Redirect → /results
 
 ╔═══════════════════════════════════════════════════════════════════════╗
 ║                  FLUJO DE BÚSQUEDA DE OPORTUNIDADES                   ║
 ╚═══════════════════════════════════════════════════════════════════════╝
 
-Usuario → "Buscar Oportunidades"
-        ↓
-/test-hunter/<student_id>
-        ↓
-verify_student_ownership(student_id, user_id)  ← VERIFICA OWNERSHIP
-        ↓
-hunter.find_and_save_matches(student_id)
-        ↓
-┌─────────────────────────────────────┐
-│ 1. Obtiene perfil de DB             │
-│ 2. Perplexity busca oportunidades   │
-│ 3. Gemini rankea matches            │
-│ 4. INSERT INTO matches              │
-└─────────────────────────────────────┘
-        ↓
-Redirect → /dashboard/<student_id>
+  Usuario → "Buscar Oportunidades"
+          ↓
+  /test-hunter/<student_id>
+          ↓
+  verify_student_ownership(student_id, user_id)
+          ↓
+  hunter.find_and_save_matches(student_id)
+          ↓
+  ┌─────────────────────────────────────┐
+  │ 1. Obtiene perfil de DB             │
+  │ 2. Perplexity busca oportunidades   │
+  │ 3. Gemini rankea y puntúa matches   │
+  │ 4. INSERT INTO matches              │
+  └─────────────────────────────────────┘
+          ↓
+  Redirect → /dashboard/<student_id>
 
 ╔═══════════════════════════════════════════════════════════════════════╗
 ║                      SEGURIDAD POR CAPAS                              ║
 ╚═══════════════════════════════════════════════════════════════════════╝
 
-CAPA 1: Autenticación
-└─► @login_required en todas las rutas protegidas
+  CAPA 1: Autenticación
+  └─► @login_required en todas las rutas protegidas
 
-CAPA 2: Verificación de Sesión
-└─► get_current_user() obtiene usuario de sesión
-    └─► Si no hay sesión → redirect /login
+  CAPA 2: Verificación de Sesión
+  └─► get_current_user() obtiene usuario de sesión
+      └─► Si no hay sesión → redirect /login
 
-CAPA 3: Ownership Verification
-└─► verify_student_ownership(student_id, user_id)
-    └─► Si no es dueño → Error 403
+  CAPA 3: Ownership Verification
+  └─► verify_student_ownership(student_id, user_id)
+      └─► Si no es dueño → Error 403
 
-CAPA 4: Filtrado de Consultas
-└─► Todas las queries filtran por user_id
-    └─► SELECT ... WHERE user_id = current_user.id
+  CAPA 4: Filtrado de Consultas
+  └─► Todas las queries filtran por user_id
+      └─► SELECT ... WHERE user_id = current_user.id
 
-CAPA 5: Row Level Security (RLS)
-└─► Políticas en Supabase
-    └─► auth.uid() = user_id en todas las tablas
+  CAPA 5: Row Level Security (RLS)
+  └─► Políticas en Supabase
+      └─► auth.uid() = user_id en todas las tablas
 
 ╔═══════════════════════════════════════════════════════════════════════╗
 ║                     NAVEGACIÓN DE LA APLICACIÓN                       ║
@@ -257,7 +292,44 @@ CAPA 5: Row Level Security (RLS)
             ┌───────────────┐            │
             │  /dashboard   │◄───────────┘
             │  /<student>   │
+            └───────┬───────┘
+                    │
+                    ▼
+            ┌───────────────┐
+            │   /upgrade    │
+            │   /premium    │
             └───────────────┘
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                          DEPLOY (VERCEL)                              ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+  Archivos clave:
+  ├── vercel.json       → Enruta todo (/*) a api/index.py
+  ├── api/index.py      → Importa app de app.py, maneja errores
+  ├── runtime.txt       → python-3.11
+  └── requirements.txt  → Dependencias que Vercel instala
+
+  Flujo de deploy:
+  git push → main → Vercel detecta cambio → Build → Deploy
+
+  Variables de entorno: Se configuran en dashboard de Vercel
+  (Settings → Environment Variables)
+
+╔═══════════════════════════════════════════════════════════════════════╗
+║                    ARCHIVOS LEGACY (NO USADOS)                        ║
+╚═══════════════════════════════════════════════════════════════════════╝
+
+  Estos archivos son residuos de versiones anteriores:
+
+  client/               → Intento de frontend React/Vite (no usado)
+  db/connection.py      → Conexión PostgreSQL directa con psycopg2
+  prisma/schema.prisma  → Schema Prisma ORM (no usado)
+  next.config.ts        → Configuración Next.js (no usada)
+  package.json (raíz)   → Config Node.js raíz (no usada)
+
+  La BD se accede via Supabase SDK (src/services/db.py), NO psycopg2.
+  El frontend se sirve via Flask/Jinja2, NO React/Next.js.
 
 ═══════════════════════════════════════════════════════════════════════
                     ✅ SISTEMA COMPLETAMENTE INTEGRADO

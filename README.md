@@ -1,141 +1,191 @@
 # Novo - Hyper-personalized Career Agent
 
-A Flask-based application for university students to get personalized career guidance through AI analysis of their CV and audio "brain dump." Now with **Supabase authentication** to protect user data and personalize the experience.
+Aplicación web Flask para estudiantes universitarios. Analiza tu CV y audio con IA (Google Gemini) y te recomienda oportunidades personalizadas de prácticas y fellowships.
 
-## Features
+**Stack:** Python/Flask · Supabase (Auth + PostgreSQL) · Google Gemini · Perplexity API · Stripe · TailwindCSS  
+**Deploy:** Vercel (serverless via `api/index.py`)
 
-- 🔐 **User Authentication:** Secure registration and login with Supabase
-- 📄 **Profile Upload:** Upload CV (PDF) and audio brain dump (MP3/WAV/M4A/OGG)
-- 🤖 **AI Analysis:** Gemini-powered multimodal analysis of your profile
-- 🎯 **Personalized Matches:** Get tailored internship and fellowship opportunities
-- 🔒 **Protected Routes:** Only authenticated users can access the application
-- 🎨 **Modern UI:** Beautiful interface built with TailwindCSS
+## Quick Start (Desarrollo Local)
 
-## Setup
+### Requisitos previos
+- Python 3.11+
+- Git
+- Credenciales de: Supabase, Google Gemini, Perplexity, Stripe (pedir al admin del proyecto)
 
-1. **Create a virtual environment:**
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+### 1. Clonar y crear environment
 
-2. **Install dependencies:**
-   ```bash
-   pip3 install -r requirements.txt
-   ```
+```bash
+git clone https://github.com/Freddyx14/University_Opportunities.git
+cd University_Opportunities
 
-3. **Configure Supabase:**
-   - Create a project at [https://supabase.com](https://supabase.com)
-   - Run the SQL script in `supabase_auth_setup.sql` in your Supabase SQL Editor
-   - See detailed instructions in [SUPABASE_AUTH_SETUP.md](SUPABASE_AUTH_SETUP.md)
+# Crear y activar virtual environment
+python -m venv .venv
 
-4. **Configure environment variables:**
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env` and add your credentials:
-   ```
-   SUPABASE_URL=your_supabase_project_url
-   SUPABASE_KEY=your_supabase_anon_key
-   SECRET_KEY=your_secret_key_here
-   GOOGLE_API_KEY=your_google_api_key
-   ```
+# Windows (PowerShell)
+.\.venv\Scripts\Activate.ps1
 
-5. **Run the application:**
-   ```bash
-   python3 app.py
-   ```
+# Linux / macOS
+source .venv/bin/activate
+```
 
-6. **Access the application:**
-   Open your browser and navigate to `http://localhost:5000`
+### 2. Instalar dependencias
 
-## Application Flow
+```bash
+pip install -r requirements.txt
+```
 
-1. **Register/Login** → Create an account or sign in at `/register` or `/login`
-2. **Upload Profile** → Submit your CV and optional audio at `/profile`
-3. **View Analysis** → See your AI-powered profile analysis at `/results`
-4. **Browse Opportunities** → Explore personalized matches at `/dashboard`
-5. **Logout** → Click "Cerrar Sesión" in the navigation bar
+### 3. Configurar variables de entorno
 
-## Project Structure
+Crear archivo `.env` en la raíz del proyecto:
+
+```env
+SUPABASE_URL=tu_supabase_url
+SUPABASE_KEY=tu_supabase_anon_key
+SECRET_KEY=una_clave_secreta_larga
+GEMINI_API_KEY=tu_gemini_api_key
+GOOGLE_API_KEY=tu_google_api_key
+PERPLEXITY_API_KEY=tu_perplexity_api_key
+STRIPE_SECRET_KEY=tu_stripe_secret_key
+STRIPE_PRICE_ID=tu_stripe_price_id
+```
+
+> **Nota:** El archivo `.env` está en `.gitignore` y NUNCA debe subirse a GitHub.
+
+### 4. Ejecutar la aplicación
+
+```bash
+python app.py
+```
+
+Abre tu navegador en: **http://localhost:5000**
+
+## Flujo de la Aplicación
+
+```
+/register → Crear cuenta (Supabase Auth)
+/login    → Iniciar sesión (JWT + Flask session)
+/profile  → Subir CV (PDF) + audio brain dump (MP3/WAV/M4A/OGG)
+/results  → Ver análisis IA de tu perfil (Gemini)
+/matches  → Ver oportunidades recomendadas (Perplexity + Gemini)
+```
+
+## Estructura del Proyecto
 
 ```
 University_Opportunities/
-├── app.py                      # Flask application entry point
-├── requirements.txt            # Python dependencies
-├── .env.example               # Example environment variables
-├── .gitignore                 # Git ignore rules
-├── SUPABASE_AUTH_SETUP.md     # Supabase authentication guide
-├── supabase_auth_setup.sql    # SQL script for database setup
-├── uploads/                   # Temporary file storage
-├── src/
+├── app.py                      # Entry point Flask (puerto 5000)
+├── api/
+│   └── index.py                # Entry point para Vercel (serverless)
+├── vercel.json                 # Configuración de deploy Vercel
+├── requirements.txt            # Dependencias Python
+├── runtime.txt                 # Versión Python para Vercel (3.11)
+├── .env                        # Variables de entorno (NO se sube a Git)
+├── .gitignore                  # Archivos ignorados por Git
+│
+├── src/                        # Código fuente backend
 │   ├── __init__.py
-│   ├── routes.py              # Route handlers with auth protection
+│   ├── routes.py               # Rutas/endpoints con protección auth
 │   └── services/
 │       ├── __init__.py
-│       ├── auth.py            # Supabase authentication service
-│       ├── ai_agent.py        # Gemini API integration
-│       ├── db.py              # Supabase database operations
-│       └── hunter.py          # Opportunity matching service
-└── templates/
-    ├── login.html             # Login page
-    ├── register.html          # Registration page
-    ├── profile.html           # Profile upload page (protected)
-    ├── results.html           # Analysis results page (protected)
-    └── matches.html           # Opportunities dashboard (protected)
+│       ├── auth.py             # Autenticación Supabase (register, login, @login_required)
+│       ├── ai_agent.py         # Integración Google Gemini (análisis CV + audio)
+│       ├── db.py               # Operaciones CRUD contra Supabase (PostgreSQL)
+│       └── hunter.py           # Búsqueda oportunidades (Perplexity) + ranking (Gemini)
+│
+├── templates/                  # Vistas HTML (Jinja2 + TailwindCSS CDN)
+│   ├── base_styles.html        # Estilos base compartidos
+│   ├── login.html              # Página de login
+│   ├── register.html           # Página de registro
+│   ├── confirmacion_auth.html  # Confirmación de registro
+│   ├── profile.html            # Subir CV + audio
+│   ├── profile_view.html       # Ver perfil analizado
+│   ├── profile_edit.html       # Editar perfil
+│   ├── my_profiles.html        # Listar perfiles del usuario
+│   ├── results.html            # Resultados de análisis IA
+│   ├── matches.html            # Oportunidades recomendadas
+│   ├── upgrade.html            # Página de upgrade a Premium
+│   ├── premium_activation.html # Activación Premium (Stripe)
+│   └── components/
+│       └── upgrade_badge.html  # Badge de upgrade reutilizable
+│
+├── static/images/users/        # Imágenes de perfil de usuarios
+│
+├── client/                     # (Legacy) Utilidades JS auxiliares, NO es frontend principal
+│   ├── package.json
+│   └── src/services/api.js     # Helper de llamadas API (no usado actualmente)
+│
+├── db/connection.py            # (Legacy) Conexión PostgreSQL directa con psycopg2
+├── prisma/schema.prisma        # (Legacy) Schema Prisma (no usado, BD es Supabase)
+├── next.config.ts              # (Legacy) Config Next.js (no usada)
+│
+├── ARQUITECTURA_VISUAL.txt     # Diagrama de arquitectura del sistema
+├── commands.sh                 # Comandos útiles para desarrollo
+└── README.md                   # Este archivo
 ```
 
-## Authentication
+> **Nota sobre carpetas Legacy:** `client/`, `db/`, `prisma/`, `next.config.ts` son archivos residuales
+> de versiones anteriores del proyecto. No se usan en la aplicación actual. El frontend se sirve
+> directamente desde Flask (`templates/` + TailwindCSS CDN).
 
-This application uses **Supabase Auth** for secure user management:
+## Arquitectura
 
-- Email/password authentication
-- Session management with JWT tokens
-- Protected routes with `@login_required` decorator
-- User data isolation with Row Level Security (RLS)
+La aplicación es un **monolito Flask** que sirve HTML server-side (Jinja2):
 
-All main routes require authentication. Users must register and login to access the application.
+```
+Navegador ──HTTP──► Flask (routes.py) ──► Servicios ──► APIs externas
+    ▲                    │                    │
+    │                    ▼                    ├─ Supabase Auth (JWT)
+    │              templates/                 ├─ Supabase DB (PostgreSQL)
+    │              (HTML+Tailwind)            ├─ Google Gemini (análisis IA)
+    └──HTML────────────────                   ├─ Perplexity (búsqueda web)
+                                              └─ Stripe (pagos Premium)
+```
 
-## Protected Routes
+## Rutas
 
-- `/profile` - Upload CV and audio
-- `/results` - View profile analysis
-- `/dashboard/<student_id>` - View matched opportunities
+| Ruta | Método | Auth | Descripción |
+|------|--------|------|-------------|
+| `/` | GET | No | Redirige a `/profile` o `/login` |
+| `/register` | GET/POST | No | Registro de usuario |
+| `/login` | GET/POST | No | Login de usuario |
+| `/logout` | GET | No | Cierra sesión |
+| `/profile` | GET/POST | Sí | Subir CV + audio |
+| `/results` | GET | Sí | Ver análisis IA |
+| `/my-profiles` | GET | Sí | Listar perfiles |
+| `/test-hunter/<id>` | GET | Sí | Buscar oportunidades |
+| `/dashboard/<id>` | GET | Sí | Ver matches |
+| `/upgrade` | GET | Sí | Página Premium |
 
-## Public Routes
+## Seguridad
 
-- `/` - Redirects to login or profile based on auth status
-- `/login` - User login
-- `/register` - User registration
-- `/logout` - User logout
+1. **Autenticación**: Supabase Auth (email/password + JWT)
+2. **Sesiones**: Flask session con tokens JWT
+3. **Protección de rutas**: Decorador `@login_required`
+4. **Ownership**: `verify_student_ownership()` verifica que cada usuario solo vea sus datos
+5. **RLS**: Row Level Security en Supabase filtra queries por `user_id`
 
-## Features
+## Deploy en Vercel
 
-- **Profile Upload:** Upload CV (PDF) and audio brain dump (MP3/WAV/M4A/OGG)
-- **Gemini Integration:** Ready for multimodal AI analysis
-- **Modern UI:** Beautiful interface built with TailwindCSS
+El proyecto despliega en Vercel como serverless function:
+- `vercel.json` → Enruta todo a `api/index.py`
+- `api/index.py` → Importa `app` de `app.py` y lo expone
+- `runtime.txt` → Define Python 3.11
+- Variables de entorno se configuran en el dashboard de Vercel
 
-## Tech Stack
+## Git Workflow
 
-- **Backend:** Python 3, Flask
-- **Authentication:** Supabase Auth
-- **Database:** Supabase (PostgreSQL)
-- **AI:** Google Gemini 1.5 Pro
-- **Frontend:** HTML5, TailwindCSS (CDN)
-- **Environment:** python-dotenv
+```bash
+# Crear rama de trabajo
+git checkout -b rama-nombre
 
-## Security Features
+# Hacer cambios + commit
+git add .
+git commit -m "feat: descripción del cambio"
+git push origin rama-nombre
 
-- Passwords stored securely with Supabase (bcrypt hashing)
-- JWT-based session management
-- Row Level Security (RLS) in database
-- CSRF protection via Flask sessions
-- Protected routes with authentication middleware
-
-## Documentation
-
-- [Supabase Auth Setup Guide](SUPABASE_AUTH_SETUP.md) - Detailed authentication configuration
-- [SQL Setup Script](supabase_auth_setup.sql) - Database schema and security policies
+# Crear Pull Request en GitHub → Review → Merge a main
+# Vercel despliega automáticamente al mergear a main
+```
 
 ## License
 
