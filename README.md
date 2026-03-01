@@ -172,6 +172,57 @@ El proyecto despliega en Vercel como serverless function:
 - `runtime.txt` → Define Python 3.11
 - Variables de entorno se configuran en el dashboard de Vercel
 
+## Testing
+
+La suite de tests valida cada etapa del pipeline de forma independiente:
+
+### Ejecutar Tests Individuales
+
+```bash
+# Interactive mode (selecciona qué tests correr)
+python tests/test_individual_steps.py
+
+# Tests automáticos (todos en secuencia)
+python tests/run_all_tests.py
+```
+
+### Descripción de Tests
+
+| Test | Descripción |
+|------|-------------|
+| TEST 1 | Verificar conexión a Google Gemini API |
+| TEST 2 | Verificar conexión a Supabase (BD + Auth) |
+| TEST 3 | Extraer texto raw de PDF del CV |
+| TEST 4 | Analizar perfil del estudiante (JSON estructurado) |
+| TEST 5 | Generar 3 oportunidades basadas en perfil |
+| TEST 6 | Puntuar oportunidades (0-100) y elegibilidad |
+| TEST 7 | Guardar perfil de estudiante en BD |
+| TEST 8 | Pipeline completo: búsqueda → scoring → guardar |
+
+**Notas:**
+- Tests 5-6 comparten datos (TEST 6 depende de TEST 5)
+- Tests 7-8 usan cuenta demo (`demo@novo.app`) aislada de usuarios personales
+- Credenciales de demo en `.env` (nunca en código)
+
+## Credenciales & Seguridad
+
+**CRÍTICO:** Nunca commitear `.env` ni archivos con API keys
+
+```bash
+# Crear archivo .env desde el template
+cp .env.example .env
+
+# Completar con tus credenciales reales
+# (pedir al admin del proyecto)
+```
+
+**API Keys necesarias:**
+- `GEMINI_API_KEY` - Google Gemini (análisis IA)
+- `SUPABASE_URL`, `SUPABASE_KEY` - Database + Auth
+- `PERPLEXITY_API_KEY` - Búsqueda web
+- `STRIPE_SECRET_KEY` - Pagos Premium
+- `DEMO_EMAIL`, `DEMO_PASSWORD` - Cuenta de testing
+
 ## Git Workflow
 
 ```bash
