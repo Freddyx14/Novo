@@ -80,6 +80,79 @@
             font-size: 16px;
             color: #64748b;
         }
+        
+        .view-toggle-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .view-toggle-btn.active {
+            background: #6366f1;
+            color: white;
+        }
+        
+        .view-toggle-btn:not(.active) {
+            background: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .view-toggle-btn:hover {
+            transition: all 0.2s ease;
+        }
+        
+        .card-detailed {
+            display: block;
+        }
+        
+        .card-detailed.hidden {
+            display: none;
+        }
+        
+        .card-summary {
+            display: none;
+        }
+        
+        .card-summary.visible {
+            display: block;
+        }
+        
+        .summary-card {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            padding: 1.5rem;
+        }
+        
+        .summary-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 0.75rem;
+        }
+        
+        .summary-info-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 0.5rem;
+            font-size: 0.9375rem;
+            color: #475569;
+        }
+        
+        .summary-info-row svg {
+            width: 1.125rem;
+            height: 1.125rem;
+            flex-shrink: 0;
+            color: #6366f1;
+        }
     </style>
 </head>
 <body class="bg-novo-bg min-h-screen">
@@ -152,30 +225,47 @@
 
         {% if matches and matches|length > 0 %}
         <!-- Results Count -->
-        <div class="flex items-center justify-between mb-8 animate-fade-in">
-            <p class="text-novo-text-light">
-                <span class="font-bold text-novo-text text-xl">{{ matches|length }}</span> oportunidades encontradas
-            </p>
-            <div class="flex items-center gap-4">
-                <div class="flex items-center gap-2 text-sm text-novo-text-light">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                    </svg>
-                    Ordenado por relevancia
+        <div class="mb-8 animate-fade-in">
+            <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <p class="text-novo-text-light">
+                    <span class="font-bold text-novo-text text-xl">{{ matches|length }}</span> oportunidades encontradas
+                </p>
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
+                    <div class="flex items-center gap-2">
+                        <button onclick="toggleView('detailed')" id="viewDetailedBtn" class="view-toggle-btn active">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+                            </svg>
+                            Detalles
+                        </button>
+                        <button onclick="toggleView('summary')" id="viewSummaryBtn" class="view-toggle-btn">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM14 5a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zM4 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H5a1 1 0 01-1-1v-4zM14 15a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"/>
+                            </svg>
+                            Resumido
+                        </button>
+                    </div>
+                    <div class="flex items-center gap-2 text-sm text-novo-text-light">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        Ordenado por relevancia
+                    </div>
+                    <button onclick="confirmClearHistory('{{ student_id }}')" class="px-4 py-2 text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Borrar Historial
+                    </button>
                 </div>
-                <button onclick="confirmClearHistory('{{ student_id }}')" class="ml-4 px-4 py-2 text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
-                    </svg>
-                    Borrar Historial
-                </button>
             </div>
         </div>
 
         <!-- Matches Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             {% for match in matches %}
-            <div class="novo-card stagger-item bg-white rounded-2xl shadow-lg shadow-gray-100 overflow-hidden group">
+            <!-- Detailed View -->
+            <div class="card-detailed novo-card stagger-item bg-white rounded-2xl shadow-lg shadow-gray-100 overflow-hidden group">
                 <!-- Card Header with gradient accent -->
                 <div class="h-2 bg-gradient-to-r {% if match.match_score > 80 %}from-emerald-400 to-teal-500{% elif match.match_score > 50 %}from-amber-400 to-orange-500{% else %}from-gray-300 to-gray-400{% endif %}"></div>
                 
@@ -270,6 +360,93 @@
                     {% endif %}
                 </div>
             </div>
+            
+            <!-- Summary View -->
+            <div class="card-summary novo-card stagger-item bg-white rounded-2xl shadow-lg shadow-gray-100 overflow-hidden group hidden">
+                <!-- Card Header with gradient accent -->
+                <div class="h-2 bg-gradient-to-r {% if match.match_score > 80 %}from-emerald-400 to-teal-500{% elif match.match_score > 50 %}from-amber-400 to-orange-500{% else %}from-gray-300 to-gray-400{% endif %}"></div>
+                
+                <div class="p-6 md:p-8">
+                    <!-- Match Score Badge -->
+                    <div class="flex items-center justify-between mb-4">
+                        {% if match.match_score > 80 %}
+                        <span class="novo-pill bg-emerald-50 text-emerald-700 border border-emerald-100">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            {{ match.match_score }}% Match
+                        </span>
+                        {% elif match.match_score > 50 %}
+                        <span class="novo-pill bg-amber-50 text-amber-700 border border-amber-100">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clip-rule="evenodd"/>
+                            </svg>
+                            {{ match.match_score }}% Match
+                        </span>
+                        {% else %}
+                        <span class="novo-pill bg-gray-50 text-gray-600 border border-gray-100">
+                            <svg class="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm6 0a1 1 0 100-2 1 1 0 000 2zm-5 3a1 1 0 11-2 0 1 1 0 012 0zm4 0a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"/>
+                            </svg>
+                            {{ match.match_score }}% Match
+                        </span>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Title -->
+                    <h3 class="text-xl md:text-2xl font-bold text-novo-text mb-3 group-hover:text-novo-primary transition-colors">
+                        {{ match.title }}
+                    </h3>
+                    
+                    <!-- Organization and Location -->
+                    <div class="space-y-2 mb-4">
+                        {% if match.organization %}
+                        <div class="flex items-start gap-2">
+                            <svg class="w-5 h-5 text-novo-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5.581m0 0H9m5.581 0L9 7m0 0H4m5.581 0L4 7m0 0H2m17 0a2 2 0 100-4 2 2 0 000 4zm-7 4a2 2 0 11-4 0 2 2 0 014 0z"/>
+                            </svg>
+                            <span class="text-novo-text-light text-sm">{{ match.organization }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if match.location %}
+                        <div class="flex items-start gap-2">
+                            <svg class="w-5 h-5 text-novo-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            <span class="text-novo-text-light text-sm">{{ match.location }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if match.deadline %}
+                        <div class="flex items-start gap-2">
+                            <svg class="w-5 h-5 text-novo-primary flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                            </svg>
+                            <span class="text-novo-text-light text-sm">Fecha Límite: {{ match.deadline }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Apply Button -->
+                    {% if match.source_url %}
+                    <a href="{{ match.source_url }}" target="_blank" rel="noopener noreferrer" 
+                       class="novo-btn block w-full text-center py-3 px-4 bg-gradient-to-r from-novo-primary to-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-200/50 hover:shadow-xl">
+                        <span class="flex items-center justify-center gap-2">
+                            Aplicar Ahora
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+                            </svg>
+                        </span>
+                    </a>
+                    {% else %}
+                    <button disabled class="block w-full text-center py-3 px-4 bg-gray-100 text-gray-400 rounded-xl font-semibold cursor-not-allowed">
+                        Enlace No Disponible
+                    </button>
+                    {% endif %}
+                </div>
+            </div>
             {% endfor %}
         </div>
 
@@ -286,9 +463,9 @@
                 Estamos encontrando las mejores oportunidades para ti. Esto puede tomar unos segundos...
             </p>
             {% if student_id %}
-            <button onclick="startSearch('{{ url_for('run_hunter', student_id=student_id) }}')" 
+            <button data-search-url="{{ url_for('run_hunter', student_id=student_id) }}"
                     id="searchBtn1"
-                    class="novo-btn inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-novo-success to-emerald-600 text-white rounded-xl font-semibold shadow-lg shadow-emerald-200 hover:shadow-xl transition-all">
+                    class="novo-btn search-trigger inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-novo-success to-emerald-600 text-white rounded-xl font-semibold shadow-lg shadow-emerald-200 hover:shadow-xl transition-all">
                 <svg class="w-5 h-5" id="searchIcon1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
@@ -304,9 +481,9 @@
 
         <!-- Actions -->
         <div class="flex flex-col sm:flex-row justify-center gap-4 animate-fade-in" style="animation-delay: 0.5s;">
-            <button onclick="startSearch('{{ url_for('run_hunter', student_id=student_id) }}')" 
+            <button data-search-url="{{ url_for('run_hunter', student_id=student_id) }}"
                     id="searchBtn2"
-                    class="novo-btn flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-novo-success to-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.02] transition-all">
+                    class="novo-btn search-trigger flex items-center justify-center gap-2 px-8 py-4 bg-gradient-to-r from-novo-success to-emerald-600 text-white rounded-xl font-bold shadow-lg shadow-emerald-200 hover:shadow-xl hover:scale-[1.02] transition-all">
                 <svg class="w-5 h-5" id="searchIcon2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                 </svg>
@@ -350,38 +527,40 @@
     </div>
 
     <script>
-        function startSearch(url) {
-            // Detectar cuál botón fue clickeado
-            const btnId = event.target.closest('button').id;
-            const btn = document.getElementById(btnId);
-            const iconId = btnId === 'searchBtn1' ? 'searchIcon1' : 'searchIcon2';
-            const spinnerId = btnId === 'searchBtn1' ? 'searchSpinner1' : 'searchSpinner2';
-            const textId = btnId === 'searchBtn1' ? 'searchText1' : 'searchText2';
-            
-            const icon = document.getElementById(iconId);
-            const spinner = document.getElementById(spinnerId);
-            const text = document.getElementById(textId);
-            
-            // Deshabilitar botón
-            btn.disabled = true;
-            btn.classList.add('opacity-75', 'cursor-not-allowed');
-            
-            // Ocultar icono, mostrar spinner
-            icon.classList.add('hidden');
-            spinner.classList.remove('hidden');
-            
-            // Cambiar texto
-            text.textContent = 'Buscando oportunidades...';
-            
-            // Mostrar overlay de progreso
-            const overlay = document.getElementById('searchProgressOverlay');
-            if (overlay) {
-                overlay.classList.add('active');
-            }
-            
-            // Redireccionar
-            window.location.href = url;
-        }
+        // Attach search handlers via data attributes
+        document.querySelectorAll('.search-trigger').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                var url = this.getAttribute('data-search-url');
+                var btnId = this.id;
+                var iconId = btnId === 'searchBtn1' ? 'searchIcon1' : 'searchIcon2';
+                var spinnerId = btnId === 'searchBtn1' ? 'searchSpinner1' : 'searchSpinner2';
+                var textId = btnId === 'searchBtn1' ? 'searchText1' : 'searchText2';
+                
+                var icon = document.getElementById(iconId);
+                var spinner = document.getElementById(spinnerId);
+                var text = document.getElementById(textId);
+                
+                // Deshabilitar botón
+                this.disabled = true;
+                this.classList.add('opacity-75', 'cursor-not-allowed');
+                
+                // Ocultar icono, mostrar spinner
+                if (icon) icon.classList.add('hidden');
+                if (spinner) spinner.classList.remove('hidden');
+                
+                // Cambiar texto
+                if (text) text.textContent = 'Buscando oportunidades...';
+                
+                // Mostrar overlay de progreso
+                var overlay = document.getElementById('searchProgressOverlay');
+                if (overlay) {
+                    overlay.classList.add('active');
+                }
+                
+                // Redireccionar
+                window.location.href = url;
+            });
+        });
 
         function confirmClearHistory(studentId) {
             if (confirm('¿Estás seguro de que deseas eliminar TODO el historial de oportunidades? Esta acción no se puede deshacer.')) {
@@ -391,6 +570,27 @@
                 form.action = '/matches/clear/' + studentId;
                 document.body.appendChild(form);
                 form.submit();
+            }
+        }
+
+        function toggleView(view) {
+            const detailedCards = document.querySelectorAll('.card-detailed');
+            const summaryCards = document.querySelectorAll('.card-summary');
+            const detailedBtn = document.getElementById('viewDetailedBtn');
+            const summaryBtn = document.getElementById('viewSummaryBtn');
+            
+            if (view === 'detailed') {
+                // Mostrar vista detallada
+                detailedCards.forEach(card => card.classList.remove('hidden'));
+                summaryCards.forEach(card => card.classList.remove('visible'));
+                detailedBtn.classList.add('active');
+                summaryBtn.classList.remove('active');
+            } else if (view === 'summary') {
+                // Mostrar vista resumida
+                detailedCards.forEach(card => card.classList.add('hidden'));
+                summaryCards.forEach(card => card.classList.add('visible'));
+                summaryBtn.classList.add('active');
+                detailedBtn.classList.remove('active');
             }
         }
     </script>
