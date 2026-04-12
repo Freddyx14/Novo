@@ -15,7 +15,11 @@ from src.services.auth import (
     logout_user, 
     login_required,
     is_authenticated,
-    get_current_user
+    get_current_user,
+    request_password_reset,
+    store_recovery_session,
+    has_recovery_session,
+    complete_password_reset
 )
 
 # Stripe Configuration
@@ -101,6 +105,86 @@ def init_routes(app):
         """Log out the current user"""
         logout_user()
         return redirect(url_for('login'))
+
+    @app.route('/forgot-password', methods=['GET', 'POST'])
+    def forgot_password():
+        """Request a password reset email."""
+        if is_authenticated():
+            return redirect(url_for('profile'))
+
+        if request.method == 'POST':
+            email = (request.form.get('email') or '').strip().lower()
+
+            if not email:
+                return render_template('forgot_password.html', error='Ingresa tu correo electrónico')
+
+            redirect_to = url_for('reset_password', _external=True)
+            result = request_password_reset(email, redirect_to)
+
+            if result['success']:
+                return render_template('forgot_password.html', success=result['message'])
+
+            return render_template('forgot_password.html', error=result['error'])
+
+        return render_template('forgot_password.html')
+
+    @app.route('/reset-password', methods=['GET', 'POST'])
+    def reset_password():
+        """Allow users to set a new password after following the recovery email."""
+        if is_authenticated():
+            return redirect(url_for('profile'))
+
+        if request.method == 'POST':
+            password = request.form.get('password') or ''
+            password_confirm = request.form.get('password_confirm') or ''
+
+            if not has_recovery_session():
+                return render_template(
+                    'reset_password.html',
+                    error='Tu enlace de recuperación no es válido o expiró. Vuelve a solicitar uno nuevo.',
+                    recovery_ready=False,
+                )
+
+            if len(password) < 6:
+                return render_template(
+                    'reset_password.html',
+                    error='La contraseña debe tener al menos 6 caracteres',
+                    recovery_ready=True,
+                )
+
+            if password != password_confirm:
+                return render_template(
+                    'reset_password.html',
+                    error='Las contraseñas no coinciden',
+                    recovery_ready=True,
+                )
+
+            result = complete_password_reset(password)
+
+            if result['success']:
+                return render_template('login.html', success=result['message'])
+
+            return render_template('reset_password.html', error=result['error'], recovery_ready=has_recovery_session())
+
+        return render_template('reset_password.html', recovery_ready=has_recovery_session())
+
+    @app.route('/reset-password/session', methods=['POST'])
+    def reset_password_session():
+        """Store recovery tokens from the email redirect in the Flask session."""
+        data = request.get_json(silent=True) or {}
+        access_token = (data.get('access_token') or '').strip()
+        refresh_token = (data.get('refresh_token') or '').strip()
+
+        if not access_token or not refresh_token:
+            return jsonify({'success': False, 'error': 'Faltan tokens de recuperación'}), 400
+
+        try:
+            supabase = _get_supabase_client()
+            supabase.auth.set_session(access_token, refresh_token)
+            store_recovery_session(access_token, refresh_token)
+            return jsonify({'success': True, 'message': 'Sesión de recuperación validada'})
+        except Exception as e:
+            return jsonify({'success': False, 'error': str(e)}), 400
         
     @app.route('/confirmacion-exitosa')
     def confirmacion_exitosa():

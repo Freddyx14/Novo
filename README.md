@@ -148,6 +148,9 @@ Navegador ──HTTP──► Flask (routes.py) ──► Servicios ──► AP
 | `/` | GET | No | Redirige a `/profile` o `/login` |
 | `/register` | GET/POST | No | Registro de usuario |
 | `/login` | GET/POST | No | Login de usuario |
+| `/forgot-password` | GET/POST | No | Solicitar correo de recuperación |
+| `/reset-password` | GET/POST | No | Crear nueva contraseña desde el enlace del correo |
+| `/reset-password/session` | POST | No | Validar la sesión de recuperación enviada por Supabase |
 | `/logout` | GET | No | Cierra sesión |
 | `/profile` | GET/POST | Sí | Subir CV + audio |
 | `/results` | GET | Sí | Ver análisis IA |
@@ -163,6 +166,9 @@ Navegador ──HTTP──► Flask (routes.py) ──► Servicios ──► AP
 3. **Protección de rutas**: Decorador `@login_required`
 4. **Ownership**: `verify_student_ownership()` verifica que cada usuario solo vea sus datos
 5. **RLS**: Row Level Security en Supabase filtra queries por `user_id`
+6. **Recuperación de contraseña**: agrega estas URLs permitidas en Supabase Auth > URL Configuration:
+    - `http://localhost:5000/reset-password`
+    - `https://university-opportunities.vercel.app/reset-password`
 
 ## Deploy en Vercel
 

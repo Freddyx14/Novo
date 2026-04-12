@@ -104,6 +104,90 @@ def login_user(email, password):
         }
 
 
+def request_password_reset(email, redirect_to):
+    """
+    Send a password reset email using Supabase Auth.
+
+    Args:
+        email: User's email address
+        redirect_to: URL that Supabase should redirect to after recovery
+
+    Returns:
+        dict: Success/error response
+    """
+    try:
+        supabase = _get_supabase_client()
+        supabase.auth.reset_password_for_email(
+            email,
+            {
+                'redirect_to': redirect_to,
+            }
+        )
+
+        return {
+            'success': True,
+            'message': 'Te enviamos un correo para restablecer tu contraseña. Revisa tu bandeja de entrada y spam.'
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
+def store_recovery_session(access_token, refresh_token):
+    """Store password recovery tokens in the Flask session."""
+    session['recovery_access_token'] = access_token
+    session['recovery_refresh_token'] = refresh_token
+
+
+def has_recovery_session():
+    """Return True when a recovery session is available."""
+    return bool(session.get('recovery_access_token') and session.get('recovery_refresh_token'))
+
+
+def clear_recovery_session():
+    """Remove password recovery tokens from the Flask session."""
+    session.pop('recovery_access_token', None)
+    session.pop('recovery_refresh_token', None)
+
+
+def complete_password_reset(new_password):
+    """
+    Update the authenticated Supabase user's password using the recovery session.
+
+    Args:
+        new_password: New password provided by the user
+
+    Returns:
+        dict: Success/error response
+    """
+    try:
+        access_token = session.get('recovery_access_token')
+        refresh_token = session.get('recovery_refresh_token')
+
+        if not access_token or not refresh_token:
+            return {
+                'success': False,
+                'error': 'No se encontró una sesión de recuperación válida. Vuelve a abrir el enlace del correo.'
+            }
+
+        supabase = _get_supabase_client()
+        supabase.auth.set_session(access_token, refresh_token)
+        supabase.auth.update_user({'password': new_password})
+        clear_recovery_session()
+
+        return {
+            'success': True,
+            'message': 'Tu contraseña fue actualizada correctamente. Ya puedes iniciar sesión.'
+        }
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }
+
+
 def logout_user():
     """
     Log out the current user
