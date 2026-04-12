@@ -2,7 +2,7 @@
 Route handlers for Novo application
 """
 
-from flask import request, render_template, jsonify, redirect, url_for, current_app, session, flash
+from flask import request, render_template, jsonify, redirect, url_for, current_app, session, flash, send_from_directory
 from werkzeug.utils import secure_filename
 import os
 import stripe
@@ -41,12 +41,49 @@ def allowed_file(filename, file_type='pdf'):
 def init_routes(app):
     """Initialize routes for the Flask app"""
     
+    # --- Landing page routes (Astro static site) ---
+    landing_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'static', 'landing')
+
     @app.route('/')
     def index():
-        """Home page - redirect based on authentication"""
+        """Home page - landing for visitors, profile for authenticated users"""
         if is_authenticated():
             return redirect(url_for('profile'))
-        return redirect(url_for('login'))
+        return send_from_directory(landing_dir, 'index.html')
+
+    @app.route('/es/')
+    def landing_es():
+        """Landing page - Spanish"""
+        if is_authenticated():
+            return redirect(url_for('profile'))
+        return send_from_directory(os.path.join(landing_dir, 'es'), 'index.html')
+
+    @app.route('/en/')
+    def landing_en():
+        """Landing page - English"""
+        if is_authenticated():
+            return redirect(url_for('profile'))
+        return send_from_directory(os.path.join(landing_dir, 'en'), 'index.html')
+
+    @app.route('/_astro/<path:filename>')
+    def landing_astro_assets(filename):
+        """Serve landing page CSS/JS assets"""
+        return send_from_directory(os.path.join(landing_dir, '_astro'), filename)
+
+    @app.route('/images/<path:filename>')
+    def landing_images(filename):
+        """Serve landing page images"""
+        return send_from_directory(os.path.join(landing_dir, 'images'), filename)
+
+    @app.route('/favicon.svg')
+    def favicon():
+        """Serve favicon"""
+        return send_from_directory(landing_dir, 'favicon.svg')
+
+    @app.route('/logo-novo.svg')
+    def logo_svg():
+        """Serve logo SVG"""
+        return send_from_directory(landing_dir, 'logo-novo.svg')
     
     # =====================
     # Authentication Routes

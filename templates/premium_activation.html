@@ -10,7 +10,7 @@
             position: fixed;
             width: 10px;
             height: 10px;
-            background: linear-gradient(135deg, #4F46E5, #10B981);
+            background: linear-gradient(135deg, #8E46B2, #10B981);
             border-radius: 2px;
             animation: confetti-fall 3s ease-out forwards;
         }
@@ -78,7 +78,7 @@
     <!-- Floating Background Elements -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div class="absolute top-20 left-10 w-96 h-96 bg-gradient-to-br from-emerald-200/40 to-teal-200/40 rounded-full blur-3xl animate-float"></div>
-        <div class="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-indigo-200/30 to-purple-200/30 rounded-full blur-3xl animate-float" style="animation-delay: -3s;"></div>
+        <div class="absolute bottom-20 right-10 w-80 h-80 bg-gradient-to-br from-purple-200/30 to-purple-200/30 rounded-full blur-3xl animate-float" style="animation-delay: -3s;"></div>
         <div class="absolute top-1/2 left-1/2 w-72 h-72 bg-gradient-to-br from-amber-200/20 to-yellow-200/20 rounded-full blur-3xl animate-float" style="animation-delay: -5s;"></div>
     </div>
 
@@ -138,8 +138,8 @@
                             </div>
                         </div>
                         
-                        <div class="feature-item flex items-center gap-4 p-4 bg-gradient-to-r from-indigo-50/50 to-purple-50/50 rounded-xl border border-indigo-100/50" style="animation-delay: 0.7s;">
-                            <div class="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                        <div class="feature-item flex items-center gap-4 p-4 bg-gradient-to-r from-purple-50/50 to-purple-50/50 rounded-xl border border-purple-100/50" style="animation-delay: 0.7s;">
+                            <div class="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
                                 <svg class="w-5 h-5 text-novo-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                                 </svg>
@@ -165,7 +165,7 @@
 
                     <!-- CTA Button -->
                     <a href="{{ url_for('profile') }}" 
-                       class="novo-btn block w-full text-center py-4 px-6 bg-gradient-to-r from-novo-primary to-indigo-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-indigo-200 hover:shadow-xl">
+                       class="novo-btn block w-full text-center py-4 px-6 bg-novo-primary text-white rounded-xl font-bold text-lg shadow-lg shadow-purple-200 hover:shadow-xl">
                         <span class="flex items-center justify-center gap-2">
                             🚀 Comenzar a Buscar Oportunidades
                         </span>
@@ -198,7 +198,7 @@
         // Create confetti effect
         function createConfetti() {
             const container = document.getElementById('confetti-container');
-            const colors = ['#4F46E5', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6'];
+            const colors = ['#8E46B2', '#10B981', '#F59E0B', '#EC4899', '#8B5CF6'];
             
             for (let i = 0; i < 50; i++) {
                 setTimeout(() => {
