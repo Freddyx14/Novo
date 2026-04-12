@@ -198,19 +198,118 @@ def init_routes(app):
     @app.route('/my-profiles')
     @login_required
     def my_profiles():
-        """Display all profiles for the current user"""
-        from src.services.db import get_student_profiles_by_user
+        """List the user's profile bases, objectives, and match summaries."""
+        from src.services.db import get_student_profiles_by_user, get_matches_for_students
         
         user = get_current_user()
         profiles = get_student_profiles_by_user(user['id'])
         is_premium = is_user_premium(user['id'])
-        
-        return render_template('my_profiles.html', profiles=profiles, user=user, is_premium=is_premium)
+
+        profile_ids = [profile.get('id') for profile in profiles if profile.get('id')]
+        matches_by_profile = get_matches_for_students(profile_ids, user['id'], owned_ids=profile_ids) if profile_ids else {}
+
+        profile_summaries = []
+        profile_stats = {
+            'profiles': len(profiles),
+            'objectives': 0,
+            'active_objectives': 0,
+            'matches_now': 0,
+            'matches_future': 0,
+            'matches_total': 0,
+        }
+
+        for profile in profiles:
+            profile_data = profile.get('profile_data') or {}
+            if not isinstance(profile_data, dict):
+                profile_data = {}
+
+            objectives = profile_data.get('search_objectives') or []
+            if not isinstance(objectives, list):
+                objectives = []
+
+            active_objective_id = profile_data.get('active_search_objective_id')
+            active_objective = next(
+                (objective for objective in objectives if isinstance(objective, dict) and objective.get('id') == active_objective_id),
+                None,
+            )
+            if not active_objective and objectives:
+                first_objective = next((objective for objective in objectives if isinstance(objective, dict)), None)
+                if first_objective and not active_objective_id:
+                    active_objective_id = first_objective.get('id')
+                active_objective = first_objective
+
+            all_matches = matches_by_profile.get(profile['id'], [])
+            if active_objective_id:
+                scoped_matches = [match for match in all_matches if match.get('objective_id') == active_objective_id]
+            else:
+                scoped_matches = all_matches
+
+            now_matches = [match for match in scoped_matches if match.get('eligibility_status') == 'eligible_now']
+            future_matches = [match for match in scoped_matches if match.get('eligibility_status') == 'future_target']
+            latest_match = scoped_matches[0] if scoped_matches else None
+
+            profile_summaries.append({
+                'id': profile.get('id'),
+                'name': profile.get('name') or 'Perfil base',
+                'created_at': profile.get('created_at'),
+                'profile_data': profile_data,
+                'objectives_count': len(objectives),
+                'active_objective': active_objective,
+                'active_objective_name': active_objective.get('name') if active_objective else None,
+                'active_objective_type': active_objective.get('type') if active_objective else None,
+                'active_matches_count': len(scoped_matches),
+                'now_matches_count': len(now_matches),
+                'future_matches_count': len(future_matches),
+                'total_matches_count': len(all_matches),
+                'latest_match': latest_match,
+                'has_cv': bool(profile_data.get('cv_file_path')),
+            })
+
+            profile_stats['objectives'] += len(objectives)
+            if active_objective:
+                profile_stats['active_objectives'] += 1
+            profile_stats['matches_now'] += len(now_matches)
+            profile_stats['matches_future'] += len(future_matches)
+            profile_stats['matches_total'] += len(all_matches)
+
+        return render_template(
+            'my_profiles.html',
+            profiles=profiles,
+            profile_summaries=profile_summaries,
+            profile_stats=profile_stats,
+            user=user,
+            is_premium=is_premium,
+        )
+
+    @app.route('/profiles/<student_id>')
+    @login_required
+    def profile_detail(student_id):
+        """Render one profile base and its objective management panel."""
+        from src.services.db import get_student_profile_by_id, get_search_objective_context
+
+        user = get_current_user()
+        is_premium = is_user_premium(user['id'])
+        selected_profile = get_student_profile_by_id(student_id, user['id'])
+
+        if not selected_profile:
+            flash('No encontramos ese perfil.', 'error')
+            return redirect(url_for('my_profiles'))
+
+        objective_context = get_search_objective_context(student_id, user['id'])
+
+        return render_template(
+            'profile_view.html',
+            user=user,
+            latest_profile=selected_profile,
+            is_premium=is_premium,
+            objectives=objective_context.get('objectives', []),
+            active_objective=objective_context.get('active_objective'),
+        )
     
     @app.route('/profile', methods=['GET'])
     @login_required
     def profile():
-        """Render the profile page with file upload form"""
+        """Render the profile creation or latest-profile view."""
         from src.services.db import get_latest_student_profile_by_user, get_search_objective_context
         
         user = get_current_user()
@@ -234,7 +333,7 @@ def init_routes(app):
     @app.route('/objectives/<student_id>/create', methods=['POST'])
     @login_required
     def create_objective(student_id):
-        """Create a new search objective for the selected profile."""
+        """Create a new search objective for a specific profile base."""
         from src.services.db import verify_student_ownership, create_search_objective
 
         user = get_current_user()
@@ -262,7 +361,7 @@ def init_routes(app):
     @app.route('/objectives/<student_id>/activate/<objective_id>', methods=['POST'])
     @login_required
     def activate_objective(student_id, objective_id):
-        """Set active objective for the selected profile."""
+        """Mark one objective as active for the selected profile base."""
         from src.services.db import verify_student_ownership, set_active_search_objective
 
         user = get_current_user()
@@ -281,7 +380,7 @@ def init_routes(app):
     @app.route('/profile', methods=['POST'])
     @login_required
     def upload_profile():
-        """Handle profile upload (CV PDF and optional audio brain dump)"""
+        """Create a new profile base from a CV upload and optional voice/text input."""
         import tempfile
         import shutil
         from datetime import datetime
@@ -291,7 +390,14 @@ def init_routes(app):
         cv_permanent_path = None
         
         try:
-            # Check if CV file is present
+            from src.services.db import get_student_profiles_by_user
+
+            user = get_current_user()
+            existing_profiles = get_student_profiles_by_user(user['id'])
+            if len(existing_profiles) >= 5:
+                return jsonify({'error': 'Solo puedes tener hasta 5 perfiles base en tu cuenta. Elimina uno antes de crear otro.'}), 400
+
+            # Keep the creation flow bounded: the app allows at most five profile bases per user.
             if 'cv_file' not in request.files:
                 return jsonify({'error': 'CV file is required'}), 400
             
@@ -305,7 +411,7 @@ def init_routes(app):
             if not allowed_file(cv_file.filename, 'pdf'):
                 return jsonify({'error': 'CV must be a PDF file'}), 400
             
-            # Use temporary files for Vercel (serverless)
+            # Vercel runs this flow serverlessly, so analyze from temp files and persist the PDF separately.
             cv_suffix = '.pdf'
             cv_fd, cv_path = tempfile.mkstemp(suffix=cv_suffix)
             os.close(cv_fd)  # Close file descriptor
@@ -340,9 +446,6 @@ def init_routes(app):
             # Import and call AI agent analyzer
             from src.services.ai_agent import analyze_profile
             from src.services.db import save_student_profile
-            
-            # Get current user
-            user = get_current_user()
             
             # Save PDF permanently in uploads/cvs/user_id/
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')

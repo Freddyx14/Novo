@@ -44,7 +44,11 @@ def get_client() -> Client:
 
 def save_student_profile(ai_result_json: Dict[str, Any], user_id: Optional[str] = None, cv_raw_text: str = "", brain_dump_text: str = "", cv_file_path: str = "") -> Dict[str, Any]:
     """
-    Inserts a row into `students` table:
+    Insert a new row into `students`.
+
+    This creates a fresh profile base; it does not update an existing one.
+
+    Stored fields:
       - name: ai_result_json["name"]
       - profile_data: full ai_result_json (jsonb)
       - user_id: UUID of authenticated user (REQUIRED after migration)
@@ -235,6 +239,67 @@ def get_matches_for_student(
         return []
 
 
+def get_matches_for_students(
+    student_ids: list[str],
+    user_id: str,
+    owned_ids: Optional[list[str]] = None,
+) -> Dict[str, list]:
+    """
+    Get matches for multiple student profiles in a single query.
+
+    Used by the profile overview to avoid one query per profile card.
+
+    Returns a mapping of student_id -> parsed match list.
+    """
+    try:
+        if not student_ids:
+            return {}
+
+        allowed_ids = [student_id for student_id in student_ids if student_id]
+        if not allowed_ids:
+            return {}
+
+        if owned_ids is None:
+            profiles = get_student_profiles_by_user(user_id)
+            owned_id_set = {profile.get('id') for profile in profiles}
+        else:
+            owned_id_set = {student_id for student_id in owned_ids if student_id}
+
+        target_ids = [student_id for student_id in allowed_ids if student_id in owned_id_set]
+        if not target_ids:
+            return {}
+
+        response = (
+            get_client()
+            .table("matches")
+            .select("*")
+            .in_("student_id", target_ids)
+            .order("created_at", desc=True)
+            .execute()
+        )
+        matches = response.data if response.data else []
+
+        grouped: Dict[str, list] = {student_id: [] for student_id in target_ids}
+        for match in matches:
+            student_id = match.get("student_id")
+            if student_id not in grouped:
+                continue
+
+            reason = match.get("match_reason") or ""
+            clean_match = dict(match)
+            clean_match["match_reason"] = _strip_objective_markers(reason)
+            clean_match["objective_id"] = _extract_objective_id_from_reason(reason)
+            clean_match["eligibility_status"] = _extract_tag_value(reason, "ELIGIBILITY_STATUS") or "eligible_now"
+            clean_match["target_horizon"] = _extract_tag_value(reason, "TARGET_HORIZON")
+            clean_match["readiness_gap"] = _extract_tag_value(reason, "READINESS_GAP")
+            grouped[student_id].append(clean_match)
+
+        return grouped
+    except Exception as e:
+        print(f"Error getting matches for multiple students: {e}")
+        return {}
+
+
 def delete_matches_for_student(
     student_id: str,
     user_id: str,
@@ -243,6 +308,8 @@ def delete_matches_for_student(
 ) -> int:
     """
     Delete matches for a student profile with optional objective/status filters.
+
+    This supports scoped cleanup from the dashboard and profile result views.
 
     Returns:
         int: number of deleted matches

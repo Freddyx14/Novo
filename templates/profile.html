@@ -42,7 +42,7 @@
     </nav>
     
     <div class="relative z-10 container mx-auto px-6 pt-28 pb-12 max-w-3xl">
-        <!-- Header -->
+        <!-- Entry header for creating or reusing a base profile -->
         <div class="text-center mb-10 animate-slide-up">
             <div class="inline-flex items-center gap-2 bg-indigo-50 text-novo-primary px-4 py-2 rounded-full text-sm font-semibold mb-4">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -58,10 +58,10 @@
             </p>
         </div>
 
-        <!-- Upload Form Card -->
+        <!-- Form container for the base profile upload flow -->
         <div class="novo-card bg-white rounded-3xl shadow-xl shadow-gray-200/50 p-8 animate-slide-up" style="animation-delay: 0.1s;">
             <form id="profileForm" enctype="multipart/form-data" class="space-y-8">
-                <!-- CV Upload Section -->
+                <!-- PDF upload area for the base profile CV -->
                 <div class="space-y-3">
                     <label class="flex items-center gap-2 text-novo-text font-semibold text-lg">
                         <span class="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">
@@ -92,7 +92,7 @@
                     </div>
                 </div>
 
-                <!-- Brain Dump Section - Chat Style -->
+                <!-- Optional free-form or audio input to enrich the profile base -->
                 <div class="space-y-3">
                     <label class="flex items-center gap-2 text-novo-text font-semibold text-lg">
                         <span class="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center">
@@ -104,7 +104,7 @@
                         <span class="text-novo-text-light text-sm font-normal">(opcional)</span>
                     </label>
                     
-                    <!-- Guiding Questions -->
+                    <!-- Prompts that help the user describe goals and context -->
                     <div class="bg-gradient-to-r from-emerald-50 to-teal-50 rounded-xl p-4 border border-emerald-100">
                         <p class="text-sm text-emerald-700 font-medium mb-2">💡 Algunas ideas para inspirarte:</p>
                         <ul class="text-sm text-emerald-600 space-y-1">
@@ -115,9 +115,9 @@
                         </ul>
                     </div>
                     
-                    <!-- Chat-style Input Container -->
+                    <!-- Text or audio input container with mutually exclusive states -->
                     <div id="brain_dump_container" class="relative border-2 border-gray-200 rounded-2xl bg-white overflow-hidden transition-all focus-within:border-novo-success focus-within:ring-4 focus-within:ring-emerald-100">
-                        <!-- Textarea for text input -->
+                        <!-- Text input for the optional brain dump -->
                         <textarea 
                             id="brain_dump_text" 
                             name="brain_dump_text" 
@@ -126,7 +126,7 @@
                             placeholder="Cuéntame un poco más de ti... ¿Quién eres? ¿Qué te apasiona? ¿Cuáles son tus metas y qué tipo de oportunidades estás buscando?"
                         ></textarea>
                         
-                        <!-- Recording Overlay (shown when recording) -->
+                        <!-- Overlay shown while microphone recording is active -->
                         <div id="recording_overlay" class="hidden absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 flex flex-col items-center justify-center">
                             <!-- Audio Wave Animation -->
                             <div class="flex items-center gap-1 mb-4">
@@ -145,7 +145,7 @@
                             <p class="text-emerald-500 text-sm mt-2">Haz clic en el micrófono para detener</p>
                         </div>
                         
-                        <!-- Audio Recorded Success State -->
+                        <!-- Success state after audio capture is finished -->
                         <div id="audio_recorded_overlay" class="hidden absolute inset-0 bg-gradient-to-br from-emerald-50 to-teal-50 flex flex-col items-center justify-center">
                             <div class="w-16 h-16 bg-novo-success rounded-full flex items-center justify-center mb-3">
                                 <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,7 +162,7 @@
                             </button>
                         </div>
                         
-                        <!-- Microphone Button -->
+                        <!-- Toggle button to start or stop audio recording -->
                         <button 
                             type="button" 
                             id="mic_button"
@@ -178,16 +178,20 @@
                         </button>
                     </div>
                     
-                    <!-- Hidden file input for audio blob -->
+                    <!-- Hidden file input used to submit the recorded audio blob -->
                     <input type="file" id="audio_file" name="audio_file" class="hidden" accept="audio/*">
                     
-                    <!-- Mode indicator -->
+                    <!-- Small status line that explains the current input mode -->
                     <p id="input_mode_indicator" class="text-xs text-novo-text-light text-center">
                         Escribe tu historia o graba un audio con el botón <span class="text-novo-success">●</span>
                     </p>
                 </div>
 
-                <!-- Submit Button -->
+                <!-- Submit control for starting the AI analysis -->
+                <div class="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
+                    Puedes tener hasta 5 perfiles base por cuenta. Si ya llegaste al límite, elimina uno desde Perfiles y Objetivos antes de crear otro.
+                </div>
+
                 <div class="pt-4">
                     <button type="submit" id="submitBtn" 
                             class="novo-btn w-full bg-gradient-to-r from-novo-primary to-indigo-600 text-white py-5 px-8 rounded-2xl font-bold text-lg shadow-xl shadow-indigo-200 hover:shadow-2xl disabled:from-gray-300 disabled:to-gray-400 disabled:shadow-none disabled:cursor-not-allowed flex items-center justify-center gap-3">
@@ -198,7 +202,7 @@
                     </button>
                 </div>
 
-                <!-- Loading State -->
+                <!-- Loading state shown while analysis is running -->
                 <div id="loading" class="hidden">
                     <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-8 text-center border border-indigo-100">
                         <div class="novo-spinner mx-auto mb-4 w-12 h-12 border-4"></div>
@@ -207,12 +211,12 @@
                     </div>
                 </div>
 
-                <!-- Message Display -->
+                <!-- Feedback area for success and error messages -->
                 <div id="message" class="hidden rounded-2xl p-5"></div>
             </form>
         </div>
 
-        <!-- Features List -->
+        <!-- Short feature summary for first-time users -->
         <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6 animate-fade-in" style="animation-delay: 0.3s;">
             <div class="flex items-start gap-3">
                 <div class="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">

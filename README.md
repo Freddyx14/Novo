@@ -7,6 +7,17 @@ Aplicación web Flask para estudiantes universitarios. Analiza tu CV y audio con
 
 ## Quick Start (Desarrollo Local)
 
+### Handoff Rápido
+
+Si vas a retomar este proyecto después de un tiempo o se lo vas a pasar a otra persona, empieza por leer en este orden:
+
+1. Este README para instalación, rutas y modelo actual.
+2. `FLUJO_COMPLETO.md` para entender el recorrido funcional.
+3. `ARQUITECTURA_VISUAL.txt` para ver la estructura general.
+4. `commands.sh` para comandos útiles de desarrollo.
+
+Si vas a tocar una parte concreta, revisa también `src/routes.py`, `src/services/db.py`, `src/services/hunter.py`, `templates/matches.html` y `templates/my_profiles.html`.
+
 ### Requisitos previos
 - Python 3.11+
 - Git
@@ -66,8 +77,19 @@ Abre tu navegador en: **http://localhost:5000**
 /login    → Iniciar sesión (JWT + Flask session)
 /profile  → Subir CV (PDF) + audio brain dump (MP3/WAV/M4A/OGG)
 /results  → Ver análisis IA de tu perfil (Gemini)
-/matches  → Ver oportunidades recomendadas (Perplexity + Gemini)
+/my-profiles → Gestionar perfiles base y objetivos
+/profiles/<id> → Ver un perfil base concreto y sus objetivos
+/dashboard/<id> → Ver oportunidades recomendadas para el objetivo activo
 ```
+
+## Modelo de Producto
+
+Novo separa dos conceptos:
+
+- **Perfil base**: CV, habilidades, experiencia y resumen general.
+- **Objetivo de búsqueda**: intención concreta reutilizable sobre un mismo perfil base.
+
+Un usuario puede tener hasta **5 perfiles base** en su cuenta. Cada perfil puede contener varios objetivos y uno de ellos puede quedar activo para orientar la búsqueda y la vista de resultados.
 
 ## Estructura del Proyecto
 
@@ -84,12 +106,12 @@ University_Opportunities/
 │
 ├── src/                        # Código fuente backend
 │   ├── __init__.py
-│   ├── routes.py               # Rutas/endpoints con protección auth
+│   ├── routes.py               # Rutas/endpoints con auth, perfiles base y objetivos
 │   └── services/
 │       ├── __init__.py
 │       ├── auth.py             # Autenticación Supabase (register, login, @login_required)
 │       ├── ai_agent.py         # Integración Google Gemini (análisis CV + audio)
-│       ├── db.py               # Operaciones CRUD contra Supabase (PostgreSQL)
+│       ├── db.py               # Operaciones CRUD y helpers de perfiles/objetivos contra Supabase
 │       └── hunter.py           # Búsqueda oportunidades (Perplexity) + ranking (Gemini)
 │
 ├── templates/                  # Vistas HTML (Jinja2 + TailwindCSS CDN)
@@ -100,7 +122,7 @@ University_Opportunities/
 │   ├── profile.html            # Subir CV + audio
 │   ├── profile_view.html       # Ver perfil analizado
 │   ├── profile_edit.html       # Editar perfil
-│   ├── my_profiles.html        # Listar perfiles del usuario
+│   ├── my_profiles.html        # Gestionar perfiles base y objetivos
 │   ├── results.html            # Resultados de análisis IA
 │   ├── matches.html            # Oportunidades recomendadas
 │   ├── upgrade.html            # Página de upgrade a Premium
@@ -152,9 +174,12 @@ Navegador ──HTTP──► Flask (routes.py) ──► Servicios ──► AP
 | `/reset-password` | GET/POST | No | Crear nueva contraseña desde el enlace del correo |
 | `/reset-password/session` | POST | No | Validar la sesión de recuperación enviada por Supabase |
 | `/logout` | GET | No | Cierra sesión |
-| `/profile` | GET/POST | Sí | Subir CV + audio |
+| `/profile` | GET/POST | Sí | Crear o editar el perfil base más reciente |
 | `/results` | GET | Sí | Ver análisis IA |
-| `/my-profiles` | GET | Sí | Listar perfiles |
+| `/my-profiles` | GET | Sí | Ver perfiles base, objetivos y resultados por perfil |
+| `/profiles/<id>` | GET | Sí | Ver un perfil base concreto y administrar objetivos |
+| `/objectives/<student_id>/create` | POST | Sí | Crear un objetivo de búsqueda para un perfil base |
+| `/objectives/<student_id>/activate/<objective_id>` | POST | Sí | Activar un objetivo de búsqueda existente |
 | `/test-hunter/<id>` | GET | Sí | Buscar oportunidades |
 | `/dashboard/<id>` | GET | Sí | Ver matches |
 | `/upgrade` | GET | Sí | Página Premium |
@@ -166,7 +191,8 @@ Navegador ──HTTP──► Flask (routes.py) ──► Servicios ──► AP
 3. **Protección de rutas**: Decorador `@login_required`
 4. **Ownership**: `verify_student_ownership()` verifica que cada usuario solo vea sus datos
 5. **RLS**: Row Level Security en Supabase filtra queries por `user_id`
-6. **Recuperación de contraseña**: agrega estas URLs permitidas en Supabase Auth > URL Configuration:
+6. **Límite de perfiles base**: la aplicación rechaza nuevos perfiles cuando el usuario llega a 5
+7. **Recuperación de contraseña**: agrega estas URLs permitidas en Supabase Auth > URL Configuration:
     - `http://localhost:5000/reset-password`
     - `https://university-opportunities.vercel.app/reset-password`
 
