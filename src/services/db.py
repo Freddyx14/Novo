@@ -7,7 +7,9 @@ Expects the following environment variables:
 """
 
 import os
+import re
 from typing import Any, Dict, Optional
+from uuid import uuid4
 
 from dotenv import load_dotenv
 from supabase import Client, create_client
@@ -155,9 +157,38 @@ def get_student_profile_by_id(student_id: str, user_id: str) -> Optional[Dict[st
         return None
 
 
-def get_matches_for_student(student_id: str, user_id: str) -> list:
+def _extract_objective_id_from_reason(reason: str) -> Optional[str]:
+    """Extract objective id marker from match_reason, e.g. [[OBJ_ID:abc-123]]."""
+    if not reason:
+        return None
+    match = re.search(r"\[\[OBJ_ID:([^\]]+)\]\]", reason)
+    return match.group(1) if match else None
+
+
+def _extract_tag_value(reason: str, tag_name: str) -> Optional[str]:
+    """Extract generic marker value from match_reason, e.g. [[TAG:value]]."""
+    if not reason:
+        return None
+    pattern = rf"\[\[{re.escape(tag_name)}:([^\]]+)\]\]"
+    match = re.search(pattern, reason)
+    return match.group(1).strip() if match else None
+
+
+def _strip_objective_markers(reason: str) -> str:
+    """Remove internal metadata markers from match_reason before rendering."""
+    if not reason:
+        return ""
+    return re.sub(r"\[\[[A-Z_]+:[^\]]+\]\]\s*", "", reason).strip()
+
+
+def get_matches_for_student(
+    student_id: str,
+    user_id: str,
+    objective_id: Optional[str] = None,
+    status_filter: Optional[str] = None,
+) -> list:
     """
-    Get matches for a specific student profile
+    Get matches for a specific student profile, optionally filtered by objective.
     """
     try:
         # First verify the profile belongs to the user
@@ -173,10 +204,81 @@ def get_matches_for_student(student_id: str, user_id: str) -> list:
             .order("created_at", desc=True)
             .execute()
         )
-        return response.data if response.data else []
+        matches = response.data if response.data else []
+
+        filtered = []
+        for match in matches:
+            reason = match.get("match_reason") or ""
+            tagged_objective_id = _extract_objective_id_from_reason(reason)
+            eligibility_status = _extract_tag_value(reason, "ELIGIBILITY_STATUS")
+            target_horizon = _extract_tag_value(reason, "TARGET_HORIZON")
+            readiness_gap = _extract_tag_value(reason, "READINESS_GAP")
+
+            if objective_id and tagged_objective_id != objective_id:
+                continue
+
+            normalized_status = eligibility_status or "eligible_now"
+            if status_filter and status_filter != "all" and normalized_status != status_filter:
+                continue
+
+            clean_match = dict(match)
+            clean_match["match_reason"] = _strip_objective_markers(reason)
+            clean_match["objective_id"] = tagged_objective_id
+            clean_match["eligibility_status"] = normalized_status
+            clean_match["target_horizon"] = target_horizon
+            clean_match["readiness_gap"] = readiness_gap
+            filtered.append(clean_match)
+
+        return filtered
     except Exception as e:
         print(f"Error getting matches: {e}")
         return []
+
+
+def delete_matches_for_student(
+    student_id: str,
+    user_id: str,
+    objective_id: Optional[str] = None,
+    status_filter: Optional[str] = None,
+) -> int:
+    """
+    Delete matches for a student profile with optional objective/status filters.
+
+    Returns:
+        int: number of deleted matches
+    """
+    try:
+        profile = get_student_profile_by_id(student_id, user_id)
+        if not profile:
+            return 0
+
+        # If no filters are provided, do fast bulk delete.
+        no_objective = not objective_id
+        no_status = not status_filter or status_filter == "all"
+        if no_objective and no_status:
+            response = get_client().table("matches").delete().eq("student_id", student_id).execute()
+            data = getattr(response, "data", None)
+            return len(data) if isinstance(data, list) else 0
+
+        matches = get_matches_for_student(
+            student_id,
+            user_id,
+            objective_id=objective_id,
+            status_filter=status_filter,
+        )
+
+        deleted = 0
+        for match in matches:
+            match_id = match.get("id")
+            if not match_id:
+                continue
+            get_client().table("matches").delete().eq("id", match_id).eq("student_id", student_id).execute()
+            deleted += 1
+
+        return deleted
+    except Exception as e:
+        print(f"Error deleting matches with filters: {e}")
+        return 0
 
 
 def delete_old_matches_for_user(user_id: str, keep_student_id: str) -> bool:
@@ -266,6 +368,130 @@ def update_student_profile_data(student_id: str, updated_data: Dict[str, Any], u
         
     except Exception as e:
         print(f"Error updating student profile: {e}")
+        return False
+
+
+def get_search_objective_context(student_id: str, user_id: str) -> Dict[str, Any]:
+    """
+    Return objectives and active objective for a student profile.
+    Stored in students.profile_data as:
+      - search_objectives: list[dict]
+      - active_search_objective_id: str
+    """
+    try:
+        profile = get_student_profile_by_id(student_id, user_id)
+        if not profile:
+            return {"objectives": [], "active_objective": None, "active_objective_id": None}
+
+        profile_data = profile.get("profile_data") or {}
+        if not isinstance(profile_data, dict):
+            profile_data = {}
+
+        raw_objectives = profile_data.get("search_objectives") or []
+        objectives = [o for o in raw_objectives if isinstance(o, dict) and o.get("id") and o.get("name")]
+
+        active_id = profile_data.get("active_search_objective_id")
+        if not active_id and objectives:
+            active_id = objectives[0].get("id")
+
+        active_objective = next((o for o in objectives if o.get("id") == active_id), None)
+
+        return {
+            "objectives": objectives,
+            "active_objective": active_objective,
+            "active_objective_id": active_id,
+        }
+    except Exception as e:
+        print(f"Error getting objective context: {e}")
+        return {"objectives": [], "active_objective": None, "active_objective_id": None}
+
+
+def create_search_objective(student_id: str, user_id: str, objective_data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """Create and persist a new search objective for a student profile."""
+    try:
+        profile = get_student_profile_by_id(student_id, user_id)
+        if not profile:
+            return None
+
+        profile_data = profile.get("profile_data") or {}
+        if not isinstance(profile_data, dict):
+            profile_data = {}
+
+        objectives = profile_data.get("search_objectives") or []
+        if not isinstance(objectives, list):
+            objectives = []
+
+        objective_name = (objective_data.get("name") or "").strip()
+        if not objective_name:
+            return None
+
+        new_objective = {
+            "id": str(uuid4()),
+            "name": objective_name,
+            "type": (objective_data.get("type") or "general").strip(),
+            "keywords": (objective_data.get("keywords") or "").strip(),
+            "location": (objective_data.get("location") or "").strip(),
+            "level": (objective_data.get("level") or "").strip(),
+            "notes": (objective_data.get("notes") or "").strip(),
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        }
+
+        objectives.append(new_objective)
+        profile_data["search_objectives"] = objectives
+
+        if not profile_data.get("active_search_objective_id"):
+            profile_data["active_search_objective_id"] = new_objective["id"]
+
+        response = (
+            get_client()
+            .table("students")
+            .update({"profile_data": profile_data})
+            .eq("id", student_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+
+        if not response.data:
+            return None
+
+        return new_objective
+    except Exception as e:
+        print(f"Error creating search objective: {e}")
+        return None
+
+
+def set_active_search_objective(student_id: str, user_id: str, objective_id: str) -> bool:
+    """Set the active objective for a student profile."""
+    try:
+        profile = get_student_profile_by_id(student_id, user_id)
+        if not profile:
+            return False
+
+        profile_data = profile.get("profile_data") or {}
+        if not isinstance(profile_data, dict):
+            return False
+
+        objectives = profile_data.get("search_objectives") or []
+        if not isinstance(objectives, list):
+            return False
+
+        exists = any(isinstance(o, dict) and o.get("id") == objective_id for o in objectives)
+        if not exists:
+            return False
+
+        profile_data["active_search_objective_id"] = objective_id
+
+        response = (
+            get_client()
+            .table("students")
+            .update({"profile_data": profile_data})
+            .eq("id", student_id)
+            .eq("user_id", user_id)
+            .execute()
+        )
+        return bool(response.data)
+    except Exception as e:
+        print(f"Error setting active objective: {e}")
         return False
 
 

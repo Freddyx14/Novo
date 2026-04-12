@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mis Análisis - Novo</title>
+    <title>Perfiles y Objetivos - Novo</title>
     {% include 'base_styles.html' %}
 </head>
 <body class="bg-novo-bg min-h-screen">
@@ -50,10 +50,10 @@
                 Historial
             </div>
             <h1 class="text-4xl md:text-5xl font-bold text-novo-text mb-4">
-                Mis <span class="novo-gradient-text">Análisis</span>
+                Perfiles y <span class="novo-gradient-text">Objetivos</span>
             </h1>
             <p class="text-xl text-novo-text-light max-w-xl mx-auto">
-                Revisa tu historial de análisis y oportunidades encontradas
+                Gestiona tu perfil base y reutilízalo para distintos objetivos de búsqueda
             </p>
         </div>
 
@@ -62,7 +62,7 @@
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10 animate-fade-in">
             <div class="bg-white rounded-2xl p-5 shadow-lg shadow-gray-100 text-center">
                 <p class="text-3xl font-bold novo-gradient-text">{{ profiles|length }}</p>
-                <p class="text-novo-text-light text-sm mt-1">Análisis</p>
+                <p class="text-novo-text-light text-sm mt-1">Perfiles Base</p>
             </div>
             <div class="bg-white rounded-2xl p-5 shadow-lg shadow-gray-100 text-center">
                 <p class="text-3xl font-bold text-novo-success">∞</p>
@@ -175,30 +175,33 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
                 </svg>
             </div>
-            <h2 class="text-2xl font-bold text-novo-text mb-3">No tienes análisis aún</h2>
+            <h2 class="text-2xl font-bold text-novo-text mb-3">No tienes perfil base aún</h2>
             <p class="text-novo-text-light mb-8 max-w-sm mx-auto">
-                Sube tu CV y cuéntanos sobre ti para obtener tu primer análisis personalizado con IA
+                Sube tu CV y cuéntanos sobre ti para crear tu perfil base y luego explorar varios objetivos
             </p>
             <a href="{{ url_for('profile') }}" 
                class="novo-btn inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-novo-primary to-indigo-600 text-white rounded-xl font-semibold shadow-lg shadow-indigo-200 hover:shadow-xl">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                 </svg>
-                Crear Primer Análisis
+                Crear Perfil Base
             </a>
         </div>
         {% endif %}
 
-        <!-- New Analysis Button -->
+        {% if profiles and profiles|length > 0 %}
+        <!-- New Objective Button -->
         <div class="text-center mt-10 animate-fade-in" style="animation-delay: 0.5s;">
-            <a href="{{ url_for('profile') }}" 
+            <a href="{{ url_for('dashboard', student_id=profiles[0].id) }}" 
                class="novo-btn inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-novo-success to-emerald-600 text-white rounded-xl font-semibold shadow-lg shadow-emerald-200 hover:shadow-xl">
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                 </svg>
-                Nuevo Análisis de Perfil
+                Definir Nuevo Objetivo de Búsqueda
             </a>
+            <p class="text-sm text-novo-text-light mt-3">Usará tu perfil base actual para explorar nuevas oportunidades.</p>
         </div>
+        {% endif %}
     </div>
 
     <style>

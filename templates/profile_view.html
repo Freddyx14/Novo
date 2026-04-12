@@ -111,7 +111,7 @@
             <div class="flex items-center gap-2 sm:gap-4">
                 {% include 'components/upgrade_badge.html' %}
                 <a href="{{ url_for('my_profiles') }}" class="text-novo-text-light hover:text-novo-primary transition-colors font-medium hidden sm:block">
-                    Mis Análisis
+                    Perfiles y Objetivos
                 </a>
                 <div class="flex items-center gap-2 sm:gap-3">
                     <div class="w-8 h-8 bg-gradient-to-br from-novo-primary to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
@@ -154,7 +154,7 @@
                     <span class="text-5xl">👤</span>
                 </div>
                 <h1 class="text-3xl font-bold text-white mb-2">{{ latest_profile.name }}</h1>
-                <p class="text-indigo-100">Tu perfil profesional está listo</p>
+                <p class="text-indigo-100">Tu perfil base está listo</p>
             </div>
 
             <!-- Profile Content -->
@@ -270,6 +270,70 @@
                     </div>
                 </div>
 
+                <!-- Search Objectives Section -->
+                <div class="mb-8">
+                    <h3 class="flex items-center gap-2 text-lg font-bold text-novo-text mb-4">
+                        <span class="w-8 h-8 bg-amber-100 rounded-lg flex items-center justify-center">
+                            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 1.343-3 3v5a3 3 0 006 0v-5c0-1.657-1.343-3-3-3z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 11-14 0"/>
+                            </svg>
+                        </span>
+                        Objetivos de Búsqueda
+                    </h3>
+
+                    {% if active_objective %}
+                    <div class="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                        Objetivo activo: <span class="font-semibold">{{ active_objective.name }}</span>
+                        {% if active_objective.type %}
+                        <span class="text-emerald-700">({{ active_objective.type }})</span>
+                        {% endif %}
+                    </div>
+                    {% else %}
+                    <div class="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        Aún no tienes un objetivo activo. Crea uno para orientar mejor tu búsqueda.
+                    </div>
+                    {% endif %}
+
+                    {% if objectives and objectives|length > 0 %}
+                    <div class="mb-5 flex flex-wrap gap-2">
+                        {% for objective in objectives %}
+                        <form method="POST" action="{{ url_for('activate_objective', student_id=latest_profile.id, objective_id=objective.id) }}">
+                            <button type="submit" class="px-3 py-2 rounded-lg text-sm font-medium border transition-colors {% if active_objective and active_objective.id == objective.id %}bg-indigo-600 text-white border-indigo-600{% else %}bg-white text-novo-text-light border-gray-200 hover:border-indigo-300 hover:text-novo-primary{% endif %}">
+                                {{ objective.name }}
+                            </button>
+                        </form>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="POST" action="{{ url_for('create_objective', student_id=latest_profile.id) }}" class="bg-gradient-to-br from-gray-50 to-slate-50 rounded-2xl p-4 border border-gray-100 space-y-3">
+                        <p class="text-sm font-semibold text-novo-text">Crear nuevo objetivo</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            <input type="text" name="objective_name" required placeholder="Ej: Beca de maestría en innovación" class="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400">
+                            <select name="objective_type" class="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400">
+                                <option value="general">Objetivo general</option>
+                                <option value="maestria">Maestría</option>
+                                <option value="fellowship">Fellowship</option>
+                                <option value="startup">Startup</option>
+                                <option value="internship">Prácticas</option>
+                                <option value="investigacion">Investigación</option>
+                            </select>
+                            <input type="text" name="objective_keywords" placeholder="Palabras clave" class="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400">
+                            <input type="text" name="objective_location" placeholder="Ubicación preferida" class="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400">
+                            <input type="text" name="objective_level" placeholder="Nivel (pregrado/maestría/etc.)" class="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400 md:col-span-2">
+                        </div>
+                        <textarea name="objective_notes" rows="2" placeholder="Notas adicionales (opcional)" class="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-200 focus:border-indigo-400"></textarea>
+                        <button type="submit" class="w-full md:w-auto px-4 py-2 rounded-xl bg-gradient-to-r from-novo-primary to-indigo-600 text-white text-sm font-semibold shadow-md hover:shadow-lg transition-shadow">
+                            Guardar objetivo
+                        </button>
+                    </form>
+                </div>
+
+                <div class="mb-6 rounded-2xl border border-indigo-100 bg-indigo-50 px-5 py-4 text-sm text-indigo-700">
+                    Este perfil base puede usarse para más de un objetivo de búsqueda.
+                </div>
+
                 <!-- Action Buttons -->
                 <div class="flex flex-col sm:flex-row gap-4 mt-10">
                     <button onclick="startSearch('{{ url_for('run_hunter', student_id=latest_profile.id) }}')" 
@@ -283,7 +347,7 @@
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        <span id="searchText">Buscar Oportunidades</span>
+                        <span id="searchText">Buscar con objetivo activo</span>
                     </button>
                     
                     <a href="{{ url_for('edit_profile', student_id=latest_profile.id) }}" 
@@ -291,7 +355,7 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
                         </svg>
-                        Recalibrar Perfil
+                        Editar Perfil Base
                     </a>
                 </div>
                 
@@ -302,7 +366,7 @@
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                         </svg>
-                        Ver Resultados Anteriores
+                        Ver Historial y Objetivos
                     </a>
                 </div>
             </div>
@@ -351,7 +415,7 @@
             spinner.classList.remove('hidden');
             
             // Cambiar texto
-            text.textContent = 'Buscando oportunidades...';
+            text.textContent = 'Buscando con objetivo activo...';
             
             // Mostrar overlay de progreso
             const overlay = document.getElementById('searchProgressOverlay');

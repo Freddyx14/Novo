@@ -18,9 +18,68 @@ supabase: Client = create_client(
 ########################################
 # Toggle entre Perplexity (real) y Gemini (temporal para testing)
 USE_GEMINI_FOR_SEARCH = True  # Cambiar a False cuando Perplexity funcione
+OBJECTIVE_TAG_PREFIX = "[[OBJ_ID:"
+ELIGIBILITY_STATUS_TAG_PREFIX = "[[ELIGIBILITY_STATUS:"
+TARGET_HORIZON_TAG_PREFIX = "[[TARGET_HORIZON:"
+READINESS_GAP_TAG_PREFIX = "[[READINESS_GAP:"
 
 
-def search_opportunities_with_gemini(cv_raw_text, brain_dump_text="", profile_data=None, num_results=3):
+def _build_objective_focus_text(active_objective=None):
+    """Build objective-specific instructions to focus search and scoring."""
+    if not active_objective or not isinstance(active_objective, dict):
+        return ""
+
+    objective_name = (active_objective.get('name') or '').strip()
+    objective_type = (active_objective.get('type') or '').strip()
+    objective_keywords = (active_objective.get('keywords') or '').strip()
+    objective_location = (active_objective.get('location') or '').strip()
+    objective_level = (active_objective.get('level') or '').strip()
+    objective_notes = (active_objective.get('notes') or '').strip()
+
+    lines = [
+        "=== OBJETIVO ACTIVO DE BÚSQUEDA ===",
+        f"Nombre del objetivo: {objective_name or 'General'}",
+    ]
+    if objective_type:
+        lines.append(f"Tipo: {objective_type}")
+    if objective_keywords:
+        lines.append(f"Palabras clave: {objective_keywords}")
+    if objective_location:
+        lines.append(f"Ubicación preferida: {objective_location}")
+    if objective_level:
+        lines.append(f"Nivel preferido: {objective_level}")
+    if objective_notes:
+        lines.append(f"Notas del usuario: {objective_notes}")
+
+    lines.append(
+        "Prioriza oportunidades alineadas al objetivo activo sin ignorar la elegibilidad real del estudiante."
+    )
+    return "\n".join(lines)
+
+
+def _sanitize_for_tag(value):
+    """Sanitize metadata value so it can be safely stored in [[KEY:VALUE]] tags."""
+    if value is None:
+        return ""
+    text = str(value).replace("\n", " ").replace("]", "").strip()
+    return text[:220]
+
+
+def _estimate_target_horizon(eligibility_notes: str, reason: str) -> str:
+    """Estimate horizon for future-target opportunities using simple heuristics."""
+    combined = f"{eligibility_notes or ''} {reason or ''}".lower()
+
+    long_terms = ["graduado", "grado", "título", "titulacion", "maestr", "doctor"]
+    mid_terms = ["idioma", "ingles", "certific", "experiencia", "años", "leadership", "liderazgo"]
+
+    if any(token in combined for token in long_terms):
+        return "12m+"
+    if any(token in combined for token in mid_terms):
+        return "6-12m"
+    return "3-6m"
+
+
+def search_opportunities_with_gemini(cv_raw_text, brain_dump_text="", profile_data=None, num_results=3, active_objective=None):
     """
     TEMPORAL: Usa Gemini para generar oportunidades basadas en el perfil del estudiante.
     NOTA: Estas NO son oportunidades verificadas en tiempo real, son sintéticas para testing.
@@ -43,9 +102,13 @@ Ambiciones: {profile_data.get('ambitions', 'No especificadas')}"""
     if brain_dump_text and brain_dump_text.strip():
         student_context += f"\n\nContexto adicional:\n{brain_dump_text[:1000]}"
     
+    objective_focus = _build_objective_focus_text(active_objective)
+
     prompt = f"""Basándote en este perfil de estudiante, genera {num_results} oportunidades educativas/profesionales REALISTAS Y RELEVANTES.
 
 {student_context}
+
+{objective_focus}
 
 IMPORTANTE:
 - Genera oportunidades que sean ADECUADAS para el nivel de estudios, país y perfil del estudiante
@@ -88,7 +151,7 @@ Devuelve SOLO un array JSON válido, sin texto adicional:
 #########   SOLO ES TEMPORAL   #########
 ########################################
 
-def search_opportunities_with_perplexity(cv_raw_text, brain_dump_text="", profile_data=None, num_results=3):
+def search_opportunities_with_perplexity(cv_raw_text, brain_dump_text="", profile_data=None, num_results=3, active_objective=None):
     """
     Uses Perplexity to find real opportunities based on the FULL raw CV text
     and optional brain dump context. This approach sends complete student info
@@ -127,11 +190,15 @@ Ambiciones: {profile_data.get('ambitions', 'No especificadas')}"""
     
     url = "https://api.perplexity.ai/chat/completions"
     
+    objective_focus = _build_objective_focus_text(active_objective)
+
     system_prompt = f"""Eres un buscador experto de oportunidades educativas y profesionales para estudiantes universitarios.
 
 A continuación tienes el CV COMPLETO de un estudiante y contexto adicional que él/ella proporcionó. Usa TODA esta información para encontrar las oportunidades más relevantes.
 
 {student_full_context}
+
+{objective_focus}
 
 TU TAREA:
 1. Analiza profundamente el perfil completo del estudiante (su experiencia, educación, habilidades, idiomas, país, nivel de estudios, intereses y ambiciones)
@@ -195,7 +262,7 @@ Devuelve SOLO un array JSON válido, sin texto adicional:
         return []
 
 
-def evaluate_match(cv_raw_text, brain_dump_text, opportunity, profile_data=None):
+def evaluate_match(cv_raw_text, brain_dump_text, opportunity, profile_data=None, active_objective=None):
     """
     Uses Gemini to evaluate how well a student matches an opportunity.
     Uses the FULL CV text + brain dump for more accurate evaluation.
@@ -207,9 +274,13 @@ def evaluate_match(cv_raw_text, brain_dump_text, opportunity, profile_data=None)
     if brain_dump_text and brain_dump_text.strip():
         student_context += f"\n\nCONTEXTO ADICIONAL DEL ESTUDIANTE:\n{brain_dump_text.strip()[:2000]}"
     
+    objective_focus = _build_objective_focus_text(active_objective)
+
     prompt = f"""Eres un asesor académico experto. Evalúa si este estudiante es un BUEN CANDIDATO para esta oportunidad.
 
 {student_context}
+
+{objective_focus}
 
 OPORTUNIDAD:
 {json.dumps(opportunity, ensure_ascii=False, indent=2)}
@@ -275,7 +346,7 @@ Devuelve un JSON con:
         return {"score": 0, "reason": "Error during evaluation", "description": "", "is_eligible": False}
 
 
-def find_and_save_matches(student_id, num_results=3):
+def find_and_save_matches(student_id, num_results=3, active_objective=None):
     """
     Main logic: Fetches student (including raw texts), gets opportunities using
     full CV text, scores them, and saves matches.
@@ -315,14 +386,16 @@ def find_and_save_matches(student_id, num_results=3):
                 cv_raw_text=cv_raw_text,
                 brain_dump_text=brain_dump_text,
                 profile_data=profile_data,
-                num_results=num_results
+                num_results=num_results,
+                active_objective=active_objective,
             )
         else:
             opportunities = search_opportunities_with_perplexity(
                 cv_raw_text=cv_raw_text,
                 brain_dump_text=brain_dump_text,
                 profile_data=profile_data,
-                num_results=num_results
+                num_results=num_results,
+                active_objective=active_objective,
             )
 ########################################
 #########   SOLO ES TEMPORAL   #########      
@@ -342,7 +415,7 @@ def find_and_save_matches(student_id, num_results=3):
             print(f"\nEvaluating: {title}")
             
             # Score with Gemini using full CV text
-            evaluation = evaluate_match(cv_raw_text, brain_dump_text, opportunity, profile_data)
+            evaluation = evaluate_match(cv_raw_text, brain_dump_text, opportunity, profile_data, active_objective)
             score = evaluation['score']
             reason = evaluation['reason']
             description = evaluation.get('description', '')
@@ -353,9 +426,41 @@ def find_and_save_matches(student_id, num_results=3):
             
             print(f"Score: {score}/100 | Eligible: {is_eligible} - {reason}")
             
+            eligibility_status = None
             if is_eligible and score >= 50:
+                eligibility_status = "eligible_now"
+            elif (not is_eligible) and score >= 45:
+                eligibility_status = "future_target"
+
+            if eligibility_status:
                 try:
                     full_reason_parts = []
+                    objective_id = None
+                    objective_name = None
+                    readiness_gap = ""
+                    target_horizon = ""
+                    if isinstance(active_objective, dict):
+                        objective_id = active_objective.get('id')
+                        objective_name = active_objective.get('name')
+
+                    if objective_id:
+                        full_reason_parts.append(f"{OBJECTIVE_TAG_PREFIX}{objective_id}]]")
+
+                    full_reason_parts.append(f"{ELIGIBILITY_STATUS_TAG_PREFIX}{eligibility_status}]]")
+
+                    if eligibility_status == "future_target":
+                        readiness_gap = (eligibility_notes or reason or "Completa requisitos clave del programa").strip()
+                        target_horizon = _estimate_target_horizon(eligibility_notes, reason)
+                        full_reason_parts.append(
+                            f"{TARGET_HORIZON_TAG_PREFIX}{_sanitize_for_tag(target_horizon)}]]"
+                        )
+                        full_reason_parts.append(
+                            f"{READINESS_GAP_TAG_PREFIX}{_sanitize_for_tag(readiness_gap)}]]"
+                        )
+
+                    if objective_name:
+                        full_reason_parts.append(f"🎯 Objetivo: {objective_name}")
+
                     if description:
                         full_reason_parts.append(description)
                     if deadline_info:
@@ -363,6 +468,9 @@ def find_and_save_matches(student_id, num_results=3):
                     full_reason_parts.append(f"💡 Match: {reason}")
                     if eligibility_notes:
                         full_reason_parts.append(f"✅ Elegibilidad: {eligibility_notes}")
+                    if eligibility_status == "future_target":
+                        full_reason_parts.append(f"🧭 Brecha principal: {readiness_gap}")
+                        full_reason_parts.append(f"⏳ Horizonte estimado: {target_horizon}")
                     
                     full_reason = "\n\n".join(full_reason_parts)
 
@@ -383,7 +491,10 @@ def find_and_save_matches(student_id, num_results=3):
                 except Exception as e:
                     print(f"Error saving match: {e}")
             else:
-                skip_reason = "Not eligible" if not is_eligible else f"Score too low ({score}/100)"
+                if not is_eligible:
+                    skip_reason = f"Not eligible and low strategic fit ({score}/100)"
+                else:
+                    skip_reason = f"Score too low ({score}/100)"
                 print(f"⊘ Skipped: {skip_reason}")
         
         print(f"\n{'='*50}")

@@ -211,7 +211,7 @@ def init_routes(app):
     @login_required
     def profile():
         """Render the profile page with file upload form"""
-        from src.services.db import get_latest_student_profile_by_user
+        from src.services.db import get_latest_student_profile_by_user, get_search_objective_context
         
         user = get_current_user()
         is_premium = is_user_premium(user['id'])
@@ -219,9 +219,64 @@ def init_routes(app):
         latest_profile = get_latest_student_profile_by_user(user['id'])
         
         if latest_profile:
-            return render_template('profile_view.html', user=user, latest_profile=latest_profile, is_premium=is_premium)
+            objective_context = get_search_objective_context(latest_profile['id'], user['id'])
+            return render_template(
+                'profile_view.html',
+                user=user,
+                latest_profile=latest_profile,
+                is_premium=is_premium,
+                objectives=objective_context.get('objectives', []),
+                active_objective=objective_context.get('active_objective'),
+            )
             
         return render_template('profile.html', user=user, is_premium=is_premium)
+
+    @app.route('/objectives/<student_id>/create', methods=['POST'])
+    @login_required
+    def create_objective(student_id):
+        """Create a new search objective for the selected profile."""
+        from src.services.db import verify_student_ownership, create_search_objective
+
+        user = get_current_user()
+        if not verify_student_ownership(student_id, user['id']):
+            flash('No tienes permiso para gestionar objetivos en este perfil.', 'error')
+            return redirect(url_for('profile'))
+
+        payload = {
+            'name': request.form.get('objective_name', ''),
+            'type': request.form.get('objective_type', ''),
+            'keywords': request.form.get('objective_keywords', ''),
+            'location': request.form.get('objective_location', ''),
+            'level': request.form.get('objective_level', ''),
+            'notes': request.form.get('objective_notes', ''),
+        }
+
+        created = create_search_objective(student_id, user['id'], payload)
+        if created:
+            flash('Objetivo creado correctamente.', 'success')
+        else:
+            flash('No se pudo crear el objetivo. Verifica el nombre e inténtalo otra vez.', 'error')
+
+        return redirect(url_for('profile'))
+
+    @app.route('/objectives/<student_id>/activate/<objective_id>', methods=['POST'])
+    @login_required
+    def activate_objective(student_id, objective_id):
+        """Set active objective for the selected profile."""
+        from src.services.db import verify_student_ownership, set_active_search_objective
+
+        user = get_current_user()
+        if not verify_student_ownership(student_id, user['id']):
+            flash('No tienes permiso para gestionar objetivos en este perfil.', 'error')
+            return redirect(url_for('profile'))
+
+        ok = set_active_search_objective(student_id, user['id'], objective_id)
+        if ok:
+            flash('Objetivo activo actualizado.', 'success')
+        else:
+            flash('No se pudo activar el objetivo seleccionado.', 'error')
+
+        return redirect(url_for('profile'))
     
     @app.route('/profile', methods=['POST'])
     @login_required
@@ -589,7 +644,7 @@ def init_routes(app):
     def dashboard(student_id):
         """Display matches dashboard for a student"""
         try:
-            from src.services.db import get_matches_for_student, get_student_profile_by_id
+            from src.services.db import get_matches_for_student, get_student_profile_by_id, get_search_objective_context
             
             user = get_current_user()
             
@@ -598,12 +653,24 @@ def init_routes(app):
             
             if not student_profile:
                 return jsonify({'error': 'No tienes permiso para acceder a este perfil'}), 403
+
+            objective_context = get_search_objective_context(student_id, user['id'])
+            active_objective = objective_context.get('active_objective')
+            active_objective_id = objective_context.get('active_objective_id')
             
-            # Obtener matches del estudiante
-            matches = get_matches_for_student(student_id, user['id'])
+            # Obtener matches del estudiante filtrados por objetivo activo
+            matches = get_matches_for_student(student_id, user['id'], objective_id=active_objective_id)
             is_premium = is_user_premium(user['id'])
             
-            return render_template('matches.html', matches=matches, student_id=student_id, user=user, student_profile=student_profile, is_premium=is_premium)
+            return render_template(
+                'matches.html',
+                matches=matches,
+                student_id=student_id,
+                user=user,
+                student_profile=student_profile,
+                is_premium=is_premium,
+                active_objective=active_objective,
+            )
         except Exception as e:
             return jsonify({'error': str(e)}), 500
 
@@ -612,7 +679,7 @@ def init_routes(app):
     def clear_matches_history(student_id):
         """Clear all matches for a student profile"""
         try:
-            from src.services.db import get_student_profile_by_id, _get_supabase_client
+            from src.services.db import get_student_profile_by_id, delete_matches_for_student
             
             user = get_current_user()
             
@@ -621,13 +688,26 @@ def init_routes(app):
             if not profile:
                 flash("No tienes permiso para borrar este historial.", "error")
                 return redirect(url_for('profile'))
-            
-            # Delete all matches for this student
-            supabase = _get_supabase_client()
-            result = supabase.table('matches').delete().eq('student_id', student_id).execute()
-            
-            print(f"Cleared all matches for student {student_id}")
-            flash("Historial de oportunidades eliminado correctamente.", "success")
+
+            clear_scope = (request.form.get('clear_scope') or 'view').strip()
+            status_filter = (request.form.get('status_filter') or 'all').strip()
+            objective_id = (request.form.get('objective_id') or '').strip() or None
+
+            if clear_scope == 'all':
+                objective_id = None
+                status_filter = 'all'
+
+            deleted_count = delete_matches_for_student(
+                student_id,
+                user['id'],
+                objective_id=objective_id,
+                status_filter=status_filter,
+            )
+
+            if clear_scope == 'all':
+                flash(f"Se eliminaron {deleted_count} oportunidades del historial completo.", "success")
+            else:
+                flash(f"Se eliminaron {deleted_count} oportunidades de la vista actual.", "success")
                 
         except Exception as e:
             print(f"Error clearing matches: {e}")
@@ -715,7 +795,7 @@ def init_routes(app):
     @login_required
     def run_hunter(student_id):
         try:
-            from src.services.db import verify_student_ownership, get_student_usage_info, update_last_search_date
+            from src.services.db import verify_student_ownership, get_student_usage_info, update_last_search_date, get_search_objective_context
             
             user = get_current_user()
             if not verify_student_ownership(student_id, user['id']):
@@ -745,7 +825,10 @@ def init_routes(app):
                 limit = 3 # Limitar a 3 oportunidades por búsqueda
             # ------------------------
 
-            find_and_save_matches(student_id, num_results=limit)
+            objective_context = get_search_objective_context(student_id, user['id'])
+            active_objective = objective_context.get('active_objective')
+
+            find_and_save_matches(student_id, num_results=limit, active_objective=active_objective)
             
             # Actualizar timestamp
             update_last_search_date(student_id)

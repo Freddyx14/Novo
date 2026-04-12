@@ -106,6 +106,32 @@
         .view-toggle-btn:hover {
             transition: all 0.2s ease;
         }
+
+        .status-filter-btn {
+            padding: 0.5rem 0.875rem;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            font-size: 0.8125rem;
+            transition: all 0.2s ease;
+            border: 1px solid #e2e8f0;
+            background: white;
+            color: #475569;
+        }
+
+        .status-filter-btn.active {
+            border-color: #6366f1;
+            background: #eef2ff;
+            color: #4338ca;
+        }
+
+        .status-filter-btn:hover {
+            border-color: #a5b4fc;
+            color: #4338ca;
+        }
+
+        .match-pair.status-hidden {
+            display: none;
+        }
         
         .card-detailed {
             display: block;
@@ -155,7 +181,7 @@
         }
     </style>
 </head>
-<body class="bg-novo-bg min-h-screen">
+<body class="bg-novo-bg min-h-screen" data-active-objective-id="{{ active_objective.id if active_objective else '' }}">
     <!-- Search Progress Overlay -->
     <div class="search-progress-overlay" id="searchProgressOverlay">
         <div style="text-align: center; display: flex; flex-direction: column; align-items: center;">
@@ -185,7 +211,7 @@
             <div class="flex items-center gap-2 sm:gap-4">
                 {% include 'components/upgrade_badge.html' %}
                 <a href="{{ url_for('my_profiles') }}" class="text-novo-text-light hover:text-novo-primary transition-colors font-medium hidden sm:block">
-                    Mis Análisis
+                    Perfiles y Objetivos
                 </a>
                 <a href="{{ url_for('profile') }}" class="text-novo-text-light hover:text-novo-primary transition-colors font-medium hidden sm:block">
                     Mi Perfil
@@ -220,6 +246,11 @@
             <p class="text-xl text-novo-text-light">
                 Encontradas para <span class="font-semibold text-novo-text">{{ student_profile.name }}</span>
             </p>
+            {% if active_objective %}
+            <p class="text-sm text-novo-text-light mt-2">
+                Objetivo activo: <span class="font-semibold text-novo-text">{{ active_objective.name }}</span>
+            </p>
+            {% endif %}
             {% endif %}
         </div>
 
@@ -228,7 +259,7 @@
         <div class="mb-8 animate-fade-in">
             <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                 <p class="text-novo-text-light">
-                    <span class="font-bold text-novo-text text-xl">{{ matches|length }}</span> oportunidades encontradas
+                    <span id="filteredMatchesCount" class="font-bold text-novo-text text-xl">{{ matches|length }}</span> oportunidades mostradas
                 </p>
                 <div class="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3">
                     <div class="flex items-center gap-2">
@@ -245,17 +276,28 @@
                             Resumido
                         </button>
                     </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="filterByStatus('all')" id="statusAllBtn" class="status-filter-btn active">Todos</button>
+                        <button onclick="filterByStatus('eligible_now')" id="statusNowBtn" class="status-filter-btn">Aplicables ahora</button>
+                        <button onclick="filterByStatus('future_target')" id="statusFutureBtn" class="status-filter-btn">Objetivos a futuro</button>
+                    </div>
                     <div class="flex items-center gap-2 text-sm text-novo-text-light">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
                         </svg>
                         Ordenado por relevancia
                     </div>
-                    <button onclick="confirmClearHistory('{{ student_id }}')" class="px-4 py-2 text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+                    <button onclick="confirmClearHistory('{{ student_id }}', false)" class="px-4 py-2 text-red-600 hover:bg-red-50 border border-red-200 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
                         </svg>
-                        Borrar Historial
+                        Borrar Vista
+                    </button>
+                    <button onclick="confirmClearHistory('{{ student_id }}', true)" class="px-4 py-2 text-white bg-red-600 hover:bg-red-700 border border-red-600 rounded-lg transition-colors font-medium text-sm flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                        </svg>
+                        Borrar Todo
                     </button>
                 </div>
             </div>
@@ -264,6 +306,8 @@
         <!-- Matches Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
             {% for match in matches %}
+            {% set status = match.eligibility_status if match.eligibility_status else 'eligible_now' %}
+            <div class="match-pair" data-status="{{ status }}">
             <!-- Detailed View -->
             <div class="card-detailed novo-card stagger-item bg-white rounded-2xl shadow-lg shadow-gray-100 overflow-hidden group">
                 <!-- Card Header with gradient accent -->
@@ -295,6 +339,12 @@
                         {% if loop.index <= 2 %}
                         <span class="urgency-badge novo-pill bg-orange-50 text-orange-600 border border-orange-100 text-xs">
                             🔥 Hot
+                        </span>
+                        {% endif %}
+
+                        {% if status == 'future_target' %}
+                        <span class="novo-pill bg-indigo-50 text-indigo-700 border border-indigo-100 text-xs">
+                            🧭 A futuro
                         </span>
                         {% endif %}
                     </div>
@@ -339,6 +389,18 @@
                         </div>
                         {% endif %}
                         {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    {% if status == 'future_target' %}
+                    <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-4 mb-6 space-y-2">
+                        <p class="text-sm font-semibold text-indigo-800">No aplicable hoy, pero estratégico</p>
+                        {% if match.readiness_gap %}
+                        <p class="text-sm text-indigo-700"><span class="font-medium">Brecha principal:</span> {{ match.readiness_gap }}</p>
+                        {% endif %}
+                        {% if match.target_horizon %}
+                        <p class="text-sm text-indigo-700"><span class="font-medium">Horizonte estimado:</span> {{ match.target_horizon }}</p>
+                        {% endif %}
                     </div>
                     {% endif %}
                     
@@ -389,6 +451,12 @@
                                 <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 100-2 1 1 0 000 2zm6 0a1 1 0 100-2 1 1 0 000 2zm-5 3a1 1 0 11-2 0 1 1 0 012 0zm4 0a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"/>
                             </svg>
                             {{ match.match_score }}% Match
+                        </span>
+                        {% endif %}
+
+                        {% if status == 'future_target' %}
+                        <span class="novo-pill bg-indigo-50 text-indigo-700 border border-indigo-100 text-xs">
+                            A futuro
                         </span>
                         {% endif %}
                     </div>
@@ -447,6 +515,7 @@
                     {% endif %}
                 </div>
             </div>
+            </div>
             {% endfor %}
         </div>
 
@@ -473,7 +542,7 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span id="searchText1">Buscar Oportunidades</span>
+                <span id="searchText1">Buscar para este objetivo</span>
             </button>
             {% endif %}
         </div>
@@ -491,7 +560,7 @@
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                     <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span id="searchText2">Buscar Oportunidades</span>
+                <span id="searchText2">Buscar para este objetivo</span>
             </button>
                 Buscar Más Oportunidades
             </a>
@@ -507,7 +576,7 @@
                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
                 </svg>
-                Mis Análisis
+                Perfiles y Objetivos
             </a>
         </div>
 
@@ -549,7 +618,7 @@
                 if (spinner) spinner.classList.remove('hidden');
                 
                 // Cambiar texto
-                if (text) text.textContent = 'Buscando oportunidades...';
+                if (text) text.textContent = 'Buscando para este objetivo...';
                 
                 // Mostrar overlay de progreso
                 var overlay = document.getElementById('searchProgressOverlay');
@@ -562,37 +631,108 @@
             });
         });
 
-        function confirmClearHistory(studentId) {
-            if (confirm('¿Estás seguro de que deseas eliminar TODO el historial de oportunidades? Esta acción no se puede deshacer.')) {
-                // Crear formulario y enviar
-                const form = document.createElement('form');
-                form.method = 'POST';
-                form.action = '/matches/clear/' + studentId;
-                document.body.appendChild(form);
-                form.submit();
+        function confirmClearHistory(studentId, clearAll) {
+            const activeObjectiveId = document.body.dataset.activeObjectiveId || '';
+            const message = clearAll
+                ? '¿Eliminar TODO el historial de este perfil? Esta acción no se puede deshacer.'
+                : '¿Eliminar solo las oportunidades visibles en la vista actual (objetivo/filtro)?';
+
+            if (!confirm(message)) {
+                return;
             }
+
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/matches/clear/' + studentId;
+
+            const clearScopeInput = document.createElement('input');
+            clearScopeInput.type = 'hidden';
+            clearScopeInput.name = 'clear_scope';
+            clearScopeInput.value = clearAll ? 'all' : 'view';
+            form.appendChild(clearScopeInput);
+
+            const statusInput = document.createElement('input');
+            statusInput.type = 'hidden';
+            statusInput.name = 'status_filter';
+            statusInput.value = clearAll ? 'all' : currentStatus;
+            form.appendChild(statusInput);
+
+            const objectiveInput = document.createElement('input');
+            objectiveInput.type = 'hidden';
+            objectiveInput.name = 'objective_id';
+            objectiveInput.value = clearAll ? '' : (activeObjectiveId || '');
+            form.appendChild(objectiveInput);
+
+            document.body.appendChild(form);
+            form.submit();
         }
 
         function toggleView(view) {
-            const detailedCards = document.querySelectorAll('.card-detailed');
-            const summaryCards = document.querySelectorAll('.card-summary');
+            currentView = view;
+            applyFilters();
+
             const detailedBtn = document.getElementById('viewDetailedBtn');
             const summaryBtn = document.getElementById('viewSummaryBtn');
-            
             if (view === 'detailed') {
-                // Mostrar vista detallada
-                detailedCards.forEach(card => card.classList.remove('hidden'));
-                summaryCards.forEach(card => card.classList.remove('visible'));
                 detailedBtn.classList.add('active');
                 summaryBtn.classList.remove('active');
-            } else if (view === 'summary') {
-                // Mostrar vista resumida
-                detailedCards.forEach(card => card.classList.add('hidden'));
-                summaryCards.forEach(card => card.classList.add('visible'));
+            } else {
                 summaryBtn.classList.add('active');
                 detailedBtn.classList.remove('active');
             }
         }
+
+        let currentView = 'detailed';
+        let currentStatus = 'all';
+
+        function filterByStatus(status) {
+            currentStatus = status;
+            applyFilters();
+
+            const allBtn = document.getElementById('statusAllBtn');
+            const nowBtn = document.getElementById('statusNowBtn');
+            const futureBtn = document.getElementById('statusFutureBtn');
+            [allBtn, nowBtn, futureBtn].forEach(btn => btn.classList.remove('active'));
+
+            if (status === 'all') allBtn.classList.add('active');
+            if (status === 'eligible_now') nowBtn.classList.add('active');
+            if (status === 'future_target') futureBtn.classList.add('active');
+        }
+
+        function applyFilters() {
+            const pairs = document.querySelectorAll('.match-pair');
+            let visibleCount = 0;
+
+            pairs.forEach(pair => {
+                const status = pair.dataset.status || 'eligible_now';
+                const detailed = pair.querySelector('.card-detailed');
+                const summary = pair.querySelector('.card-summary');
+                const statusMatches = currentStatus === 'all' || status === currentStatus;
+
+                if (!statusMatches) {
+                    pair.classList.add('status-hidden');
+                    return;
+                }
+
+                pair.classList.remove('status-hidden');
+                visibleCount += 1;
+
+                if (currentView === 'detailed') {
+                    detailed.classList.remove('hidden');
+                    summary.classList.remove('visible');
+                } else {
+                    detailed.classList.add('hidden');
+                    summary.classList.add('visible');
+                }
+            });
+
+            const countEl = document.getElementById('filteredMatchesCount');
+            if (countEl) countEl.textContent = String(visibleCount);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            applyFilters();
+        });
     </script>
 </body>
 </html>

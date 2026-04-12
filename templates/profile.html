@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Novo - Crear Perfil</title>
+    <title>Novo - Perfil Base</title>
     {% include 'base_styles.html' %}
 </head>
 <body class="bg-novo-bg min-h-screen">
@@ -25,7 +25,7 @@
             <div class="flex items-center gap-2 sm:gap-4">
                 {% include 'components/upgrade_badge.html' %}
                 <a href="{{ url_for('my_profiles') }}" class="text-novo-text-light hover:text-novo-primary transition-colors font-medium hidden sm:block">
-                    Mis Análisis
+                    Perfiles y Objetivos
                 </a>
                 <div class="flex items-center gap-2 sm:gap-3">
                     <div class="w-8 h-8 bg-gradient-to-br from-novo-primary to-purple-500 rounded-full flex items-center justify-center text-white text-sm font-semibold">
@@ -48,13 +48,13 @@
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
                 </svg>
-                Nuevo Perfil
+                Perfil Base
             </div>
             <h1 class="text-4xl md:text-5xl font-bold text-novo-text mb-4">
-                Crea tu <span class="novo-gradient-text">Perfil</span>
+                Crea tu <span class="novo-gradient-text">Perfil Base</span>
             </h1>
             <p class="text-xl text-novo-text-light max-w-xl mx-auto">
-                Sube tu CV y cuéntanos sobre ti para encontrar oportunidades personalizadas
+                Sube tu CV una vez y úsalo para explorar distintos objetivos: prácticas, becas o fellowships.
             </p>
         </div>
 
@@ -194,7 +194,7 @@
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
                         </svg>
-                        Analizar Perfil con IA
+                        Analizar Perfil Base con IA
                     </button>
                 </div>
 
