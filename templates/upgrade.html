@@ -9,7 +9,7 @@
 <body class="bg-novo-bg min-h-screen">
     <!-- Floating Background Elements -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div class="absolute top-10 left-10 w-80 h-80 bg-gradient-to-br from-indigo-200/30 to-purple-200/30 rounded-full blur-3xl animate-float"></div>
+        <div class="absolute top-10 left-10 w-80 h-80 bg-gradient-to-br from-purple-200/30 to-purple-200/30 rounded-full blur-3xl animate-float"></div>
         <div class="absolute bottom-20 right-10 w-96 h-96 bg-gradient-to-br from-emerald-200/20 to-teal-200/20 rounded-full blur-3xl animate-float" style="animation-delay: -3s;"></div>
         <div class="absolute top-1/2 right-1/4 w-64 h-64 bg-gradient-to-br from-amber-200/20 to-orange-200/20 rounded-full blur-3xl animate-float" style="animation-delay: -5s;"></div>
     </div>
@@ -18,7 +18,7 @@
     <nav class="novo-navbar fixed top-0 left-0 right-0 z-50 border-b border-gray-100">
         <div class="container mx-auto px-6 py-4 flex justify-between items-center">
             <a href="/" class="flex items-center gap-3 group">
-                <img src="{{ url_for('static', filename='images/logo-novo.svg') }}" alt="Novo" class="w-10 h-10 rounded-xl shadow-lg shadow-indigo-200 group-hover:scale-110 transition-transform">
+                <img src="{{ url_for('static', filename='images/logo-novo.svg') }}" alt="Novo" class="w-10 h-10 rounded-xl shadow-lg shadow-purple-200 group-hover:scale-110 transition-transform">
                 <span class="text-2xl font-bold novo-gradient-text">Novo</span>
             </a>
             <a href="{{ url_for('profile') }}" class="text-novo-text-light hover:text-novo-primary transition-colors font-medium flex items-center gap-2">
@@ -113,7 +113,7 @@
             </div>
 
             <!-- Pro Plan -->
-            <div class="novo-card bg-white rounded-3xl shadow-xl shadow-indigo-200/50 p-8 border-2 border-novo-primary relative overflow-hidden animate-slide-up" style="animation-delay: 0.1s;">
+            <div class="novo-card bg-white rounded-3xl shadow-xl shadow-purple-200/50 p-8 border-2 border-novo-primary relative overflow-hidden animate-slide-up" style="animation-delay: 0.1s;">
                 <!-- Popular badge -->
                 <div class="absolute top-0 right-0 bg-gradient-to-r from-novo-primary to-purple-600 text-white text-xs font-bold px-4 py-2 rounded-bl-xl">
                     MÁS POPULAR
@@ -160,7 +160,7 @@
                 </ul>
                 
                 <a href="{{ url_for('checkout', student_id=student_id) }}" 
-                   class="novo-btn block w-full text-center py-4 px-6 bg-gradient-to-r from-novo-primary to-indigo-600 text-white rounded-xl font-bold text-lg shadow-lg shadow-indigo-200 hover:shadow-xl">
+                   class="novo-btn block w-full text-center py-4 px-6 bg-novo-primary text-white rounded-xl font-bold text-lg shadow-lg shadow-purple-200 hover:shadow-xl">
                     <span class="flex items-center justify-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/>
