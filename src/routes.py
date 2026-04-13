@@ -49,7 +49,7 @@ def init_routes(app):
         """Home page - landing for visitors, profile for authenticated users"""
         if is_authenticated():
             return redirect(url_for('profile'))
-        return send_from_directory(landing_dir, 'index.html')
+        return send_from_directory(os.path.join(landing_dir, 'es'), 'index.html')
 
     @app.route('/es/')
     def landing_es():
